@@ -1,0 +1,12 @@
+export const PACK_SIZE = 20
+export const PACKS_PER_BATCH = 3
+export const PRIORITY_WINDOW_SECONDS = 300           // 5 minutes
+export const EXCLUSIVE_PRICE_CENTS = 10000           // TT$100.00
+export const COMMUNITY_PRICE_CENTS = 3000            // TT$30.00
+export const COMMUNITY_MAX_BUYERS = 3
+export const LEGENDARY_INCOME_THRESHOLD_TTD = 25000  // monthly
+export const PRO_SUBSCRIPTION_PRICE_CENTS = 20000    // TT$200.00/mo
+export const PRO_MONTHLY_FREE_CREDITS = 5
+export const MAX_DISPUTES_PER_PACK = 5
+export const TIMEZONE = 'America/Port_of_Spain'
+export const CURRENCY_LOCALE = 'en-TT'
