@@ -5,7 +5,9 @@
 ALTER TABLE agents
   ADD COLUMN kyc_status text NOT NULL DEFAULT 'PENDING'
     CHECK (kyc_status IN ('PENDING', 'APPROVED', 'REJECTED')),
-  ADD COLUMN kyc_rejected_reason text;
+  ADD COLUMN kyc_rejected_reason text,
+  ADD CONSTRAINT chk_kyc_rejection_reason
+    CHECK (kyc_status != 'REJECTED' OR kyc_rejected_reason IS NOT NULL);
 
 CREATE TABLE kyc_documents (
   id           uuid        PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -17,5 +19,4 @@ CREATE TABLE kyc_documents (
   UNIQUE (agent_id, doc_type)
 );
 
-CREATE INDEX idx_kyc_docs_agent ON kyc_documents(agent_id);
-CREATE INDEX idx_agents_kyc     ON agents(kyc_status);
+CREATE INDEX idx_agents_kyc ON agents(kyc_status);
