@@ -18,6 +18,7 @@ const config: Config = {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'card-flip': 'flip 0.6s ease-in-out',
         'shine': 'shine 1.5s ease-in-out',
+        'marquee': 'marquee 30s linear infinite',
       },
       keyframes: {
         flip: {
@@ -28,6 +29,10 @@ const config: Config = {
         shine: {
           '0%':   { backgroundPosition: '-200% center' },
           '100%': { backgroundPosition: '200% center' },
+        },
+        marquee: {
+          '0%':   { transform: 'translateX(0%)' },
+          '100%': { transform: 'translateX(-50%)' },
         },
       },
     },
