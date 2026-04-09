@@ -8,7 +8,29 @@ const config: Config = {
     './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        display: ['var(--font-display)', 'system-ui', 'sans-serif'],
+        body: ['var(--font-body)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)', 'monospace'],
+      },
+      animation: {
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'card-flip': 'flip 0.6s ease-in-out',
+        'shine': 'shine 1.5s ease-in-out',
+      },
+      keyframes: {
+        flip: {
+          '0%':   { transform: 'rotateY(0deg)' },
+          '50%':  { transform: 'rotateY(90deg)' },
+          '100%': { transform: 'rotateY(0deg)' },
+        },
+        shine: {
+          '0%':   { backgroundPosition: '-200% center' },
+          '100%': { backgroundPosition: '200% center' },
+        },
+      },
+    },
   },
   plugins: [],
 }
