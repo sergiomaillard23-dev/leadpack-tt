@@ -1,12 +1,12 @@
 'use client'
 
 const TICKER_ITEMS = [
-  'Agent X just cracked a Gold Pack in Chaguanas',
-  'New Legendary Pack dropped — San Fernando area',
+  'Agent X just cracked a Gold Pack',
+  'New Legendary Pack just dropped',
   '3 packs cracked in the last hour',
   'Pack B just cracked — 2 spots left!',
-  'Agent Y closed a deal from a Westmoorings lead',
-  'Fresh batch incoming — Port of Spain leads',
+  'Agent Y closed a deal from a Community Pack lead',
+  'Fresh batch incoming — new leads available now',
   'Exclusive Pack sold in under 60 seconds',
   '5 new leads added to the Community Pool',
 ]
