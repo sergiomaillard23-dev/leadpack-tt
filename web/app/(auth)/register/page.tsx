@@ -1,49 +1,77 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
-export default function RegisterPage() {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+const PHONE_RE = /^1-868-\d{3}-\d{4}$/
 
+export default function RegisterPage() {
   const supabase = createClient()
+  const [name, setName]         = useState('')
+  const [phone, setPhone]       = useState('')
+  const [email, setEmail]       = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError]       = useState<string | null>(null)
+  const [sent, setSent]         = useState(false)
+  const [loading, setLoading]   = useState(false)
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true)
     setError(null)
+
+    if (!PHONE_RE.test(phone)) {
+      setError('Phone must be in format 1-868-XXX-XXXX')
+      return
+    }
+
+    setLoading(true)
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        data: { full_name: name, phone },
         emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
       },
     })
+    setLoading(false)
+
     if (error) {
       setError(error.message)
     } else {
-      router.push('/marketplace')
-      router.refresh()
+      setSent(true)
     }
-    setLoading(false)
   }
 
   const inputClass =
     'w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors'
 
+  if (sent) {
+    return (
+      <div className="text-center">
+        <p className="text-white font-semibold text-lg mb-2">Check your email</p>
+        <p className="text-gray-400 text-sm">
+          We sent a confirmation link to <span className="text-white">{email}</span>.
+          Click it to activate your account.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <>
       <h1 className="text-2xl font-bold text-white mb-6 text-center">Create your account</h1>
       <form onSubmit={handleRegister} className="flex flex-col gap-4">
+        <input type="text" placeholder="Full name" value={name}
+          onChange={(e) => setName(e.target.value)} required className={inputClass} />
+        <div>
+          <input type="text" placeholder="Phone (1-868-XXX-XXXX)" value={phone}
+            onChange={(e) => setPhone(e.target.value)} required className={inputClass} />
+          <p className="text-xs text-gray-600 mt-1 ml-1">T&T numbers only</p>
+        </div>
         <input type="email" placeholder="Email address" value={email}
           onChange={(e) => setEmail(e.target.value)} required className={inputClass} />
-        <input type="password" placeholder="Password (min 6 characters)" value={password}
-          onChange={(e) => setPassword(e.target.value)} minLength={6} required className={inputClass} />
+        <input type="password" placeholder="Password (min 8 characters)" value={password}
+          onChange={(e) => setPassword(e.target.value)} minLength={8} required className={inputClass} />
         {error && <p className="text-red-400 text-sm">{error}</p>}
         <button type="submit" disabled={loading}
           className="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold disabled:opacity-50 transition-colors">
