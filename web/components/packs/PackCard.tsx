@@ -1,8 +1,11 @@
 'use client'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Pack } from '@/lib/db/packs'
+import { getMockLeadsForPack } from '@/lib/db/packs'
 import { formatCurrency } from '@/lib/utils'
+import { calculateLeadOVR, getLeadTier } from '@/lib/utils/scoring'
+import PackReveal from './PackReveal'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -113,9 +116,20 @@ interface PackCardProps {
 export function PackCard({ pack }: PackCardProps) {
   const router = useRouter()
   const [state, setState] = useState<CardState>({ phase: 'idle' })
+  const [showReveal, setShowReveal] = useState(false)
   const isLegendary = pack.income_tier === 'LEGENDARY'
   const isExclusive = pack.pack_type === 'EXCLUSIVE'
   const spotsLeft = pack.max_buyers - pack.buyer_count
+
+  const mockLeads = useMemo(() => getMockLeadsForPack(pack.id), [pack.id])
+  const avgOvr = useMemo(() => {
+    if (mockLeads.length === 0) return 0
+    return Math.round(mockLeads.reduce((sum, l) => sum + l.ovr, 0) / mockLeads.length)
+  }, [mockLeads])
+  const hasLegendaryLead = useMemo(
+    () => mockLeads.some(l => getLeadTier(calculateLeadOVR(l.stats)) === 'LEGENDARY'),
+    [mockLeads]
+  )
 
   // Tick the countdown when in cracked state.
   // setState uses functional form so secondsLeft is read from prev, not captured.
@@ -256,6 +270,15 @@ export function PackCard({ pack }: PackCardProps) {
 
   // ── Idle / cracking / error state ─────────────────────────────────────────
   return (
+    <>
+      {showReveal && (
+        <PackReveal
+          packId={pack.id}
+          leads={mockLeads}
+          onClose={() => setShowReveal(false)}
+        />
+      )}
+
     <div
       className={`relative flex flex-col gap-5 rounded-xl border p-6 bg-gray-900 transition-colors ${
         isLegendary
@@ -263,7 +286,7 @@ export function PackCard({ pack }: PackCardProps) {
           : 'border-gray-700 hover:border-gray-600'
       }`}
     >
-      {/* Pack label + name + legendary badge */}
+      {/* Pack label + name + badges */}
       <div className="flex items-start justify-between">
         <div>
           <span className="text-5xl font-black text-white tracking-tight">
@@ -273,11 +296,21 @@ export function PackCard({ pack }: PackCardProps) {
             {PACK_NAMES[pack.pack_name] ?? pack.pack_name}
           </p>
         </div>
-        {isLegendary && (
-          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500 text-black uppercase tracking-wider">
-            Legendary
+        <div className="flex flex-col items-end gap-1.5">
+          {hasLegendaryLead && (
+            <span className="text-xs font-black px-2.5 py-1 rounded-full bg-amber-500 text-black uppercase tracking-wider">
+              ★ Legendary Pack
+            </span>
+          )}
+          {isLegendary && !hasLegendaryLead && (
+            <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500 text-black uppercase tracking-wider">
+              Legendary
+            </span>
+          )}
+          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-gray-800 text-gray-300 tabular-nums">
+            Avg OVR {avgOvr}
           </span>
-        )}
+        </div>
       </div>
 
       {/* Pack name + type badges */}
@@ -313,7 +346,10 @@ export function PackCard({ pack }: PackCardProps) {
 
       {/* CTA */}
       <button
-        onClick={handleCrack}
+        onClick={() => {
+          setShowReveal(true)
+          handleCrack()
+        }}
         disabled={state.phase === 'cracking'}
         className="mt-auto w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold transition-colors flex items-center justify-center gap-2"
       >
@@ -329,5 +365,6 @@ export function PackCard({ pack }: PackCardProps) {
         )}
       </button>
     </div>
+    </>
   )
 }
