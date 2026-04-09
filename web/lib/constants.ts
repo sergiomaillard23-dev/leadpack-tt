@@ -44,13 +44,22 @@ export type PackTierKey = keyof typeof PACK_TIERS
 
 // ── Other business constants ──────────────────────────────────────────────────
 
-export const LEGENDARY_INCOME_THRESHOLD_TTD = 25000  // monthly TTD
-export const PRO_SUBSCRIPTION_PRICE_CENTS   = 20000  // TT$200.00/mo
-export const PRO_MONTHLY_FREE_CREDITS       = 5
-export const MAX_DISPUTES_PER_PACK          = 5
-export const TIMEZONE                       = 'America/Port_of_Spain'
-export const CURRENCY_LOCALE                = 'en-TT'
-export const PHONE_REGEX                    = /^1-868-\d{3}-\d{4}$/
+export const LEGENDARY_INCOME_THRESHOLD_TTD   = 25000   // monthly TTD
+export const PRO_SUBSCRIPTION_PRICE_CENTS     = 100000  // TT$1,000.00/mo
+export const PRO_MONTHLY_FREE_CREDITS         = 5
+export const PRO_EARLY_ACCESS_WINDOW_SECONDS  = 60      // 60s head start for Pro on Legendary packs
+export const MAX_DISPUTES_PER_PACK            = 5
+export const TIMEZONE                         = 'America/Port_of_Spain'
+export const CURRENCY_LOCALE                  = 'en-TT'
+export const PHONE_REGEX                      = /^1-868-\d{3}-\d{4}$/
+
+// ── OVR Tier Thresholds ───────────────────────────────────────────────────────
+export const LEGENDARY_OVR_THRESHOLD = 90  // OVR >= 90 = Legendary card tier
+export const GOLD_OVR_THRESHOLD      = 80  // OVR 80–89 = Gold
+export const SILVER_OVR_THRESHOLD    = 70  // OVR 70–79 = Silver
+// OVR < 70 = Bronze
+
+export const DROP_TIME_HOUR = 9  // Daily pack drop at 9:00 AM (Port of Spain time)
 
 export const KYC_ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png'] as const
 export const KYC_MAX_FILE_BYTES = 5 * 1024 * 1024 // 5MB
