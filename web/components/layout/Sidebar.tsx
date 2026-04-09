@@ -7,6 +7,7 @@ const NAV_LINKS = [
   { href: '/marketplace', label: 'Marketplace' },
   { href: '/journal',     label: 'My Journal' },
   { href: '/wallet',      label: 'Wallet' },
+  { href: '/pro',         label: 'Pro Tools ✦' },
 ]
 
 export function Sidebar() {
