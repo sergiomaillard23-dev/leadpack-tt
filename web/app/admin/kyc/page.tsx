@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import pool from '@/lib/db/client'
+import { getPendingAgents } from '@/lib/db/kyc'
 import { getSignedUrl } from '@/lib/supabase/storage'
 import { AdminKycTable } from '@/components/admin/AdminKycTable'
 
@@ -10,6 +10,7 @@ type PendingAgent = {
   email: string
   phone: string
   kyc_status: string
+  created_at: Date
   docs: { doc_type: string; signed_url: string }[]
 }
 
@@ -27,17 +28,7 @@ export default async function AdminKycPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!isAdmin(user?.email)) redirect('/marketplace')
 
-  const { rows } = await pool.query<{
-    id: string; full_name: string; email: string; phone: string;
-    kyc_status: string; doc_type: string | null; storage_path: string | null;
-  }>(`
-    SELECT a.id, a.full_name, a.email, a.phone, a.kyc_status,
-           d.doc_type, d.storage_path
-    FROM agents a
-    LEFT JOIN kyc_documents d ON d.agent_id = a.id
-    WHERE a.kyc_status IN ('PENDING', 'REJECTED')
-    ORDER BY a.created_at DESC, d.doc_type ASC
-  `)
+  const rows = await getPendingAgents()
 
   // Group rows by agent, generate signed URLs
   const agentMap = new Map<string, PendingAgent>()
@@ -49,6 +40,7 @@ export default async function AdminKycPage() {
         email: row.email,
         phone: row.phone,
         kyc_status: row.kyc_status,
+        created_at: row.created_at,
         docs: [],
       })
     }
@@ -65,7 +57,7 @@ export default async function AdminKycPage() {
       <div className="max-w-5xl mx-auto">
         <h1 className="text-2xl font-bold text-white mb-2">KYC Review</h1>
         <p className="text-gray-400 text-sm mb-8">
-          {agents.length} submission{agents.length !== 1 ? 's' : ''} pending
+          {agents.length} submission{agents.length !== 1 ? 's' : ''} awaiting review
         </p>
         <AdminKycTable agents={agents} />
       </div>

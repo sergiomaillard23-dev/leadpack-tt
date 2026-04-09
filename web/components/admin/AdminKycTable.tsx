@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 type Doc = { doc_type: string; signed_url: string }
-type Agent = { id: string; full_name: string; email: string; phone: string; kyc_status: string; docs: Doc[] }
+type Agent = { id: string; full_name: string; email: string; phone: string; kyc_status: string; created_at: Date | string; docs: Doc[] }
 
 const DOC_LABELS: Record<string, string> = {
   INSURANCE_LICENSE: 'Licence',
@@ -16,20 +16,29 @@ export function AdminKycTable({ agents }: { agents: Agent[] }) {
   const [busy, setBusy] = useState<string | null>(null)
   const [rejectTarget, setRejectTarget] = useState<string | null>(null)
   const [reason, setReason] = useState('')
+  const [actionError, setActionError] = useState<string | null>(null)
 
   async function handleAction(agentId: string, action: 'APPROVE' | 'REJECT', rejectReason?: string) {
     setBusy(agentId)
+    setActionError(null)
     try {
-      await fetch(`/api/admin/kyc/${agentId}`, {
+      const res = await fetch(`/api/admin/kyc/${agentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, reason: rejectReason }),
       })
-    } finally {
-      setBusy(null)
+      const json = await res.json()
+      if (!res.ok || !json.success) {
+        setActionError(json.error ?? 'Action failed. Please try again.')
+        return
+      }
       setRejectTarget(null)
       setReason('')
       router.refresh()
+    } catch {
+      setActionError('Network error. Please try again.')
+    } finally {
+      setBusy(null)
     }
   }
 
@@ -39,6 +48,12 @@ export function AdminKycTable({ agents }: { agents: Agent[] }) {
 
   return (
     <div className="flex flex-col gap-4">
+      {actionError && (
+        <div className="mb-4 rounded-lg bg-red-950/40 border border-red-800/40 px-4 py-3 flex items-center justify-between">
+          <p className="text-red-400 text-sm">{actionError}</p>
+          <button onClick={() => setActionError(null)} className="text-gray-500 hover:text-gray-300 text-xs ml-4">Dismiss</button>
+        </div>
+      )}
       {agents.map((agent) => (
         <div key={agent.id}
           className="rounded-xl border border-gray-700 bg-gray-900 p-5 flex flex-col gap-4">
@@ -46,6 +61,9 @@ export function AdminKycTable({ agents }: { agents: Agent[] }) {
             <div>
               <p className="text-white font-semibold">{agent.full_name}</p>
               <p className="text-gray-400 text-sm">{agent.email} · {agent.phone}</p>
+              <p className="text-gray-600 text-xs mt-0.5">
+                Submitted {new Date(agent.created_at).toLocaleDateString('en-TT', { timeZone: 'America/Port_of_Spain', year: 'numeric', month: 'short', day: 'numeric' })}
+              </p>
             </div>
             <span className={`text-xs font-bold px-2 py-1 rounded-full uppercase ${
               agent.kyc_status === 'REJECTED'

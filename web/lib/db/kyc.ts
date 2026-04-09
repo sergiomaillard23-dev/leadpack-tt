@@ -51,3 +51,26 @@ export async function setKycStatus(
     throw new Error(`setKycStatus: agent not found – id=${agent_id}`)
   }
 }
+
+export type PendingAgentRow = {
+  id: string
+  full_name: string
+  email: string
+  phone: string
+  kyc_status: string
+  created_at: Date
+  doc_type: string | null
+  storage_path: string | null
+}
+
+export async function getPendingAgents(): Promise<PendingAgentRow[]> {
+  const { rows } = await pool.query<PendingAgentRow>(`
+    SELECT a.id, a.full_name, a.email, a.phone, a.kyc_status, a.created_at,
+           d.doc_type, d.storage_path
+    FROM agents a
+    LEFT JOIN kyc_documents d ON d.agent_id = a.id
+    WHERE a.kyc_status IN ('PENDING', 'REJECTED')
+    ORDER BY a.created_at DESC, d.doc_type ASC
+  `)
+  return rows
+}
