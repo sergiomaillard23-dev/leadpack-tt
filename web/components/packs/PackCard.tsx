@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Pack } from '@/lib/db/packs'
-import { getMockLeadsForPack } from '@/lib/db/packs'
+import { getMockLeadsForPack } from '@/lib/mock/leads'
 import { formatCurrency } from '@/lib/utils'
 import { calculateLeadOVR, getLeadTier } from '@/lib/utils/scoring'
 import PackReveal from './PackReveal'
