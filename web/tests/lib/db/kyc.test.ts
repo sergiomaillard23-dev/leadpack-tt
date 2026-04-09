@@ -38,4 +38,14 @@ describe('setKycStatus', () => {
     expect(call[1]).toContain('agent-1')
     expect(call[1]).toContain('APPROVED')
   })
+
+  it('passes null as reason when not provided', async () => {
+    await setKycStatus('agent-1', 'APPROVED')
+    expect(vi.mocked(pool.query).mock.calls[0][1]).toEqual(['agent-1', 'APPROVED', null])
+  })
+
+  it('passes reason string when status is REJECTED', async () => {
+    await setKycStatus('agent-1', 'REJECTED', 'Document expired')
+    expect(vi.mocked(pool.query).mock.calls[0][1]).toEqual(['agent-1', 'REJECTED', 'Document expired'])
+  })
 })

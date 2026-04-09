@@ -8,7 +8,7 @@ export type KycDocument = {
 
 export async function upsertDocument(
   agent_id: string,
-  doc_type: string,
+  doc_type: KycDocument['doc_type'],
   storage_path: string
 ): Promise<void> {
   await pool.query(
