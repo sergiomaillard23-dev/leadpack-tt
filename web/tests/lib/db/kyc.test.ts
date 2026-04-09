@@ -31,8 +31,10 @@ describe('getDocuments', () => {
 })
 
 describe('setKycStatus', () => {
+  beforeEach(() => vi.clearAllMocks())
+
   it('calls UPDATE with correct status', async () => {
-    vi.mocked(pool.query).mockResolvedValue({ rows: [] } as any)
+    vi.mocked(pool.query).mockResolvedValue({ rows: [], rowCount: 1 } as any)
     await setKycStatus('agent-1', 'APPROVED')
     const call = vi.mocked(pool.query).mock.calls[0]
     expect(call[1]).toContain('agent-1')
@@ -40,12 +42,25 @@ describe('setKycStatus', () => {
   })
 
   it('passes null as reason when not provided', async () => {
+    vi.mocked(pool.query).mockResolvedValue({ rows: [], rowCount: 1 } as any)
     await setKycStatus('agent-1', 'APPROVED')
     expect(vi.mocked(pool.query).mock.calls[0][1]).toEqual(['agent-1', 'APPROVED', null])
   })
 
   it('passes reason string when status is REJECTED', async () => {
+    vi.mocked(pool.query).mockResolvedValue({ rows: [], rowCount: 1 } as any)
     await setKycStatus('agent-1', 'REJECTED', 'Document expired')
     expect(vi.mocked(pool.query).mock.calls[0][1]).toEqual(['agent-1', 'REJECTED', 'Document expired'])
+  })
+
+  it('clears reason when status is APPROVED', async () => {
+    vi.mocked(pool.query).mockResolvedValue({ rows: [], rowCount: 1 } as any)
+    await setKycStatus('agent-1', 'APPROVED', 'accidental reason')
+    expect(vi.mocked(pool.query).mock.calls[0][1]).toEqual(['agent-1', 'APPROVED', null])
+  })
+
+  it('throws when agent not found', async () => {
+    vi.mocked(pool.query).mockResolvedValue({ rows: [], rowCount: 0 } as any)
+    await expect(setKycStatus('bad-id', 'APPROVED')).rejects.toThrow('agent not found')
   })
 })
