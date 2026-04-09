@@ -23,7 +23,8 @@ export async function uploadKycDocument(
   docType: string,
   file: File
 ): Promise<string> {
-  const ext = file.name.split('.').pop() ?? 'bin'
+  const parts = file.name.split('.')
+  const ext = parts.length > 1 ? parts.pop()! : 'bin'
   const path = `${agentId}/${docType}.${ext}`
   const supabase = getServiceClient()
 
