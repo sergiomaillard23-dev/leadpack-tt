@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import pool from '@/lib/db/client'
+import { provisionAgent, getAgentByEmail } from '@/lib/db/agents'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
@@ -29,17 +29,24 @@ export async function GET(request: NextRequest) {
 
     if (!error && data.session) {
       const { user } = data.session
-      const name  = user.user_metadata?.full_name ?? 'Agent'
-      const phone = user.user_metadata?.phone ?? '1-868-000-0000'
+      const fullName = user.user_metadata?.full_name as string | undefined
+      const phone = user.user_metadata?.phone as string | undefined
 
-      // Provision agents row — ON CONFLICT DO NOTHING is safe to call on every login
-      await pool.query(
-        `INSERT INTO agents (name, phone, email, kyc_status)
-         VALUES ($1, $2, $3, 'PENDING')
-         ON CONFLICT (email) DO NOTHING`,
-        [name, phone, user.email]
-      ).catch((err) => console.error('[auth/callback] agent provisioning failed:', err))
+      if (!fullName || !phone) {
+        return NextResponse.redirect(`${origin}/login?error=missing_profile`)
+      }
 
+      try {
+        await provisionAgent(user.id, fullName, phone, user.email!)
+      } catch (err) {
+        console.error('[auth/callback] provisioning failed', err)
+        return NextResponse.redirect(`${origin}/login?error=provisioning_failed`)
+      }
+
+      const agent = await getAgentByEmail(user.email!).catch(() => null)
+      if (agent?.kyc_status === 'APPROVED') {
+        return NextResponse.redirect(`${origin}/marketplace`)
+      }
       return NextResponse.redirect(`${origin}/onboarding/kyc`)
     }
   }

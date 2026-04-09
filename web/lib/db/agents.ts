@@ -17,3 +17,17 @@ export async function getAgentByEmail(email: string): Promise<Agent | null> {
   )
   return rows[0] ?? null
 }
+
+export async function provisionAgent(
+  id: string,
+  fullName: string,
+  phone: string,
+  email: string
+): Promise<void> {
+  await pool.query(
+    `INSERT INTO agents (id, full_name, phone, email, kyc_status)
+     VALUES ($1, $2, $3, $4, 'PENDING')
+     ON CONFLICT (email) DO NOTHING`,
+    [id, fullName, phone, email]
+  )
+}

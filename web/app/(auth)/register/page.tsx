@@ -2,8 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-
-const PHONE_RE = /^1-868-\d{3}-\d{4}$/
+import { PHONE_REGEX } from '@/lib/constants'
 
 export default function RegisterPage() {
   const supabase = createClient()
@@ -19,26 +18,29 @@ export default function RegisterPage() {
     e.preventDefault()
     setError(null)
 
-    if (!PHONE_RE.test(phone)) {
+    if (!PHONE_REGEX.test(phone)) {
       setError('Phone must be in format 1-868-XXX-XXXX')
       return
     }
 
     setLoading(true)
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: name, phone },
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
-      },
-    })
-    setLoading(false)
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: name, phone },
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+        },
+      })
 
-    if (error) {
-      setError(error.message)
-    } else {
-      setSent(true)
+      if (error) {
+        setError(error.message)
+      } else {
+        setSent(true)
+      }
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -62,7 +64,7 @@ export default function RegisterPage() {
       <h1 className="text-2xl font-bold text-white mb-6 text-center">Create your account</h1>
       <form onSubmit={handleRegister} className="flex flex-col gap-4">
         <input type="text" placeholder="Full name" value={name}
-          onChange={(e) => setName(e.target.value)} required className={inputClass} />
+          onChange={(e) => setName(e.target.value)} required minLength={2} className={inputClass} />
         <div>
           <input type="text" placeholder="Phone (1-868-XXX-XXXX)" value={phone}
             onChange={(e) => setPhone(e.target.value)} required className={inputClass} />

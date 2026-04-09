@@ -16,12 +16,10 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
-  const agent = user?.email
-    ? await getAgentByEmail(user.email).catch(() => null)
-    : null
+  const agent = await getAgentByEmail(user.email!).catch(() => null)
 
   // Gate non-approved agents to KYC flow
-  if (agent && agent.kyc_status !== 'APPROVED') {
+  if (!agent || agent.kyc_status !== 'APPROVED') {
     redirect('/onboarding/kyc')
   }
 
