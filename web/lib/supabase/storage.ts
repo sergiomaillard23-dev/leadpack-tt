@@ -23,8 +23,12 @@ export async function uploadKycDocument(
   docType: string,
   file: File
 ): Promise<string> {
-  const parts = file.name.split('.')
-  const ext = parts.length > 1 ? parts.pop()! : 'bin'
+  const EXT_MAP: Record<string, string> = {
+    'application/pdf': 'pdf',
+    'image/jpeg':      'jpg',
+    'image/png':       'png',
+  }
+  const ext = EXT_MAP[file.type] ?? 'bin'
   const path = `${agentId}/${docType}.${ext}`
   const supabase = getServiceClient()
 

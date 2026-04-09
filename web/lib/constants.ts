@@ -51,3 +51,7 @@ export const MAX_DISPUTES_PER_PACK          = 5
 export const TIMEZONE                       = 'America/Port_of_Spain'
 export const CURRENCY_LOCALE                = 'en-TT'
 export const PHONE_REGEX                    = /^1-868-\d{3}-\d{4}$/
+
+export const KYC_ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png'] as const
+export const KYC_MAX_FILE_BYTES = 5 * 1024 * 1024 // 5MB
+export const KYC_DOC_FIELDS = ['INSURANCE_LICENSE', 'GOVERNMENT_ID_1', 'GOVERNMENT_ID_2'] as const
