@@ -2,7 +2,7 @@
 import { useState, useRef } from 'react'
 
 interface Props {
-  kycStatus: 'PENDING' | 'REJECTED'
+  kycStatus: 'REJECTED'
   rejectedReason: string | null
 }
 
@@ -13,9 +13,7 @@ const DOCS = [
 ] as const
 
 export function KycUploadForm({ kycStatus, rejectedReason }: Props) {
-  const [phase, setPhase] = useState<'idle' | 'submitting' | 'submitted'>(
-    kycStatus === 'PENDING' ? 'submitted' : 'idle'
-  )
+  const [phase, setPhase] = useState<'idle' | 'submitting' | 'submitted'>('idle')
   const [error, setError] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
 
@@ -59,11 +57,18 @@ export function KycUploadForm({ kycStatus, rejectedReason }: Props) {
     <form ref={formRef} onSubmit={handleSubmit}
       className="rounded-xl border border-gray-700 bg-gray-900 p-6 flex flex-col gap-5">
 
-      {kycStatus === 'REJECTED' && rejectedReason && (
+      {kycStatus === 'REJECTED' && rejectedReason && phase === 'idle' && (
         <div className="rounded-lg bg-red-950/40 border border-red-800/40 px-4 py-3">
           <p className="text-red-400 text-sm font-semibold mb-0.5">Submission rejected</p>
           <p className="text-red-300 text-xs">{rejectedReason}</p>
           <p className="text-gray-500 text-xs mt-1">Please re-upload corrected documents below.</p>
+        </div>
+      )}
+
+      {kycStatus === 'REJECTED' && !rejectedReason && phase === 'idle' && (
+        <div className="rounded-lg bg-red-950/40 border border-red-800/40 px-4 py-3">
+          <p className="text-red-400 text-sm font-semibold mb-0.5">Submission rejected</p>
+          <p className="text-gray-500 text-xs mt-1">Please re-upload your documents below.</p>
         </div>
       )}
 
