@@ -109,7 +109,7 @@ export function HeroSection() {
             <div className="anim-1">
               <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-400/80 border border-indigo-500/20 bg-indigo-500/5 px-3 py-1.5 rounded-full">
                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                Trinidad &amp; Tobago's First
+                Trinidad &amp; Tobago&apos;s First
               </span>
             </div>
 

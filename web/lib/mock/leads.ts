@@ -69,6 +69,7 @@ const RAW_MOCK_LEADS = [
  * Client-safe — no pg dependency.
  * Used until Migration 010 is applied on Railway.
  */
-export function getMockLeadsForPack(_packId: string): ScoredLead[] {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function getMockLeadsForPack(packId: string): ScoredLead[] {
   return RAW_MOCK_LEADS.map(scoreLead)
 }

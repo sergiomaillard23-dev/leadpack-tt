@@ -297,7 +297,6 @@ function FullMode({
 // ── PackReveal — routes to the correct mode ───────────────────────────────────
 
 export default function PackReveal({
-  packId,
   packLabel,
   priceTTD,
   leads,
