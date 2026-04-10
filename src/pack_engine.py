@@ -5,9 +5,9 @@
 # Fires when the pending lead pool reaches TRIGGER_THRESHOLD (20).
 # Creates one lead_batch, then 3 sibling packs (A/B/C).
 # Pack leads are linked via the pack_leads join table:
-#   STANDARD  (A) → first 5 leads  (sampler, up to 3 buyers)
-#   PREMIUM   (B) → all 20 leads   (full pack, up to 2 buyers)
-#   LEGENDARY (C) → all 20 leads   (full pack, 1 buyer, Pro only)
+#   STANDARD  (A) → first 5 leads  TT$150    up to 3 buyers
+#   PREMIUM   (B) → all 20 leads   TT$600    up to 2 buyers
+#   LEGENDARY (C) → all 20 leads   TT$2,000  1 buyer, Pro only
 
 import os, json, psycopg2
 from dotenv import load_dotenv
@@ -22,7 +22,7 @@ PACK_TIERS = [
         "pack_name":  "STANDARD",
         "pack_type":  "COMMUNITY",
         "pack_size":  5,
-        "price_ttd":  120000,   # TT$1,200.00
+        "price_ttd":  15000,    # TT$150.00
         "max_buyers": 3,
     },
     {
@@ -30,7 +30,7 @@ PACK_TIERS = [
         "pack_name":  "PREMIUM",
         "pack_type":  "COMMUNITY",
         "pack_size":  20,
-        "price_ttd":  240000,   # TT$2,400.00
+        "price_ttd":  60000,    # TT$600.00
         "max_buyers": 2,
     },
     {
@@ -38,7 +38,7 @@ PACK_TIERS = [
         "pack_name":  "LEGENDARY",
         "pack_type":  "EXCLUSIVE",
         "pack_size":  20,
-        "price_ttd":  360000,   # TT$3,600.00
+        "price_ttd":  200000,   # TT$2,000.00
         "max_buyers": 1,
     },
 ]

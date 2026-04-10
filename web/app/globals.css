@@ -1,3 +1,25 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── Pack card animations ─────────────────────────────────────────────────── */
+
+/* Light sweep that plays once when hovering a pack card */
+@keyframes packShimmer {
+  from { transform: translateX(-100%) skewX(-20deg); }
+  to   { transform: translateX(450%)  skewX(-20deg); }
+}
+
+.group:hover .pack-shimmer {
+  animation: packShimmer 0.85s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Subtle breathing glow for Legendary rays */
+@keyframes legendaryPulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1;   }
+}
+
+.legendary-ray {
+  animation: legendaryPulse 2.4s ease-in-out infinite;
+}
