@@ -2,6 +2,7 @@ import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAgentByEmail } from '@/lib/db/agents'
 import { getLeadsForPack, getPurchasedPacks } from '@/lib/db/journal'
+import WhatsAppButton from '@/components/journal/WhatsAppButton'
 import Link from 'next/link'
 
 function formatIncome(cents: number | null) {
@@ -57,6 +58,7 @@ export default async function PackLeadsPage({ params }: { params: { packId: stri
                 <th className="px-5 py-3 text-left text-gray-400 font-medium">Parish</th>
                 <th className="px-5 py-3 text-left text-gray-400 font-medium">Est. Income</th>
                 <th className="px-5 py-3 text-left text-gray-400 font-medium">Source</th>
+                <th className="px-5 py-3 text-right text-gray-400 font-medium">Outreach</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
@@ -74,6 +76,9 @@ export default async function PackLeadsPage({ params }: { params: { packId: stri
                       : '—'}
                   </td>
                   <td className="px-5 py-3 text-gray-500">{lead.source ?? '—'}</td>
+                  <td className="px-5 py-3 text-right">
+                    <WhatsAppButton leadId={lead.id} isPro={agent.is_subscribed} />
+                  </td>
                 </tr>
               ))}
             </tbody>
