@@ -18,6 +18,36 @@ export async function getAgentByEmail(email: string): Promise<Agent | null> {
   return rows[0] ?? null
 }
 
+export type AgentRow = {
+  id: string
+  full_name: string
+  email: string
+  phone: string
+  wallet_balance: number
+  is_subscribed: boolean
+  kyc_status: string
+  created_at: Date
+}
+
+export async function getAllAgents(): Promise<AgentRow[]> {
+  const { rows } = await pool.query<AgentRow>(
+    `SELECT id, full_name, email, phone, wallet_balance, is_subscribed, kyc_status, created_at
+     FROM agents
+     ORDER BY created_at DESC`
+  )
+  return rows
+}
+
+export async function setProStatus(agent_id: string, isPro: boolean): Promise<void> {
+  await pool.query(
+    `UPDATE agents
+     SET is_subscribed  = $2,
+         sub_expires_at = CASE WHEN $2 THEN NULL ELSE NULL END
+     WHERE id = $1`,
+    [agent_id, isPro]
+  )
+}
+
 export async function provisionAgent(
   id: string,
   fullName: string,

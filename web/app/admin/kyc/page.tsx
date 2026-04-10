@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getPendingAgents } from '@/lib/db/kyc'
 import { getSignedUrl } from '@/lib/supabase/storage'
 import { AdminKycTable } from '@/components/admin/AdminKycTable'
+import Link from 'next/link'
 
 type PendingAgent = {
   id: string
@@ -55,7 +56,15 @@ export default async function AdminKycPage() {
   return (
     <div className="min-h-screen bg-gray-950 p-8">
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-2xl font-bold text-white mb-2">KYC Review</h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-2xl font-bold text-white">KYC Review</h1>
+          <Link
+            href="/admin/agents"
+            className="text-indigo-400 hover:text-indigo-300 text-sm"
+          >
+            Manage Agents →
+          </Link>
+        </div>
         <p className="text-gray-400 text-sm mb-8">
           {agents.length} submission{agents.length !== 1 ? 's' : ''} awaiting review
         </p>
