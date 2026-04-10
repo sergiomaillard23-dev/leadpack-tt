@@ -30,9 +30,10 @@ export async function middleware(request: NextRequest) {
                           pathname.startsWith('/auth/')
   const isOnboarding    = pathname.startsWith('/onboarding')
   const isAdminRoute    = pathname.startsWith('/admin')
+  const isLandingPage   = pathname === '/'
 
-  // 1. Unauthenticated — send to login (except auth routes)
-  if (!user && !isAuthRoute) {
+  // 1. Unauthenticated — send to login (except auth routes and the public landing page)
+  if (!user && !isAuthRoute && !isLandingPage) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)

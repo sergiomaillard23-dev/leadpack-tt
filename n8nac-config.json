@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "activeInstanceId": "instance-2d9180cf",
+  "instances": [
+    {
+      "id": "instance-2d9180cf",
+      "name": "localhost · Sergio Maillard",
+      "host": "http://localhost:5678",
+      "syncFolder": "workflows",
+      "projectId": "personal",
+      "projectName": "Personal",
+      "instanceIdentifier": "local_5678_sergio_m",
+      "verification": {
+        "status": "verified",
+        "normalizedHost": "http://localhost:5678",
+        "userId": "b0627b70-916b-4c52-8c89-1d404037ca28",
+        "userName": "Sergio Maillard",
+        "userEmail": "volatusfinancial33@gmail.com",
+        "lastCheckedAt": "2026-04-08T06:37:03.292Z"
+      }
+    }
+  ],
+  "host": "http://localhost:5678",
+  "syncFolder": "workflows",
+  "projectId": "personal",
+  "projectName": "Personal",
+  "instanceIdentifier": "local_5678_sergio_m"
+}

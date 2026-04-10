@@ -191,25 +191,36 @@ def main():
             continue
 
         try:
-            cur.execute("SELECT id FROM leads WHERE phone = %s", (phone,))
+            # Idempotency: check by phone stored in fact_find JSONB
+            cur.execute("SELECT id FROM leads WHERE fact_find->>'phone' = %s", (phone,))
             if cur.fetchone():
                 skipped += 1
                 continue
 
             import json, uuid
+            fact_find = {
+                'first_name':    first_name,
+                'last_name':     last_name,
+                'phone':         phone,
+                'parish':        parish,
+                'monthly_income': monthly_income,
+                'employer_type': employer_type,
+                'age':           age,
+                'intent_source': source.lower(),
+            }
+            is_legendary = monthly_income >= 25000 and ovr >= LEGENDARY_OVR_THRESHOLD
             cur.execute("""
                 INSERT INTO leads (
-                    id, lead_batch_id, full_name, phone, parish,
-                    estimated_income_ttd, source, calculated_ovr, lead_stats, created_at
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    id, lead_batch_id, source, income_bracket, is_legendary,
+                    fact_find, calculated_ovr, lead_stats, created_at
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 str(uuid.uuid4()),
                 args.lead_batch_id,
-                f"{first_name} {last_name}",
-                phone,
-                parish,
-                monthly_income,
                 source,
+                f"{monthly_income:,}",
+                is_legendary,
+                json.dumps(fact_find),
                 ovr,
                 json.dumps(stats),
                 datetime.now(timezone.utc),

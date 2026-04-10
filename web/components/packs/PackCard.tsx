@@ -1,26 +1,17 @@
 'use client'
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Pack } from '@/lib/db/packs'
-import { getMockLeadsForPack } from '@/lib/mock/leads'
+import type { ScoredLead } from '@/lib/types/leads'
 import { formatCurrency } from '@/lib/utils'
-import { calculateLeadOVR, getLeadTier } from '@/lib/utils/scoring'
 import PackReveal from './PackReveal'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type LeadPreview = {
-  id: string
-  source: string
-  income_bracket: string | null
-  intent_niche: string | null
-  is_legendary: boolean
-}
-
 type CardState =
   | { phase: 'idle' }
   | { phase: 'cracking' }
-  | { phase: 'cracked'; expiresAt: number; secondsLeft: number; leads: LeadPreview[] }
+  | { phase: 'cracked'; expiresAt: number; secondsLeft: number }
   | { phase: 'purchasing' }
   | { phase: 'purchased' }
   | { phase: 'error'; message: string }
@@ -65,27 +56,26 @@ function TimerRing({ secondsLeft }: { secondsLeft: number }) {
 
 // ── Lead preview row ──────────────────────────────────────────────────────────
 
-const SOURCE_LABELS: Record<string, string> = {
-  FACEBOOK: 'FB',
-  REFERRAL: 'REF',
-  COLD: 'COLD',
+const TIER_COLORS: Record<string, string> = {
+  LEGENDARY: 'text-amber-400',
+  GOLD:      'text-yellow-500',
+  SILVER:    'text-slate-400',
+  BRONZE:    'text-orange-400',
 }
 
-function LeadRow({ lead }: { lead: LeadPreview }) {
+function LeadRow({ lead }: { lead: ScoredLead }) {
   return (
     <div className="flex items-center gap-3 py-2 border-b border-gray-800 last:border-0">
-      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 uppercase tracking-wider min-w-[36px] text-center">
-        {SOURCE_LABELS[lead.source] ?? lead.source?.slice(0, 4)}
+      <span className={`text-sm font-black tabular-nums min-w-[28px] ${TIER_COLORS[lead.tier] ?? 'text-gray-400'}`}>
+        {lead.ovr}
       </span>
       <div className="flex-1 min-w-0">
         <p className="text-xs text-gray-300 truncate">
-          {lead.intent_niche ?? 'General Insurance'}
+          {lead.parish || lead.income_bracket || 'Trinidad'}
         </p>
-        {lead.income_bracket && (
-          <p className="text-[10px] text-gray-500">{lead.income_bracket}</p>
-        )}
+        <p className="text-[10px] text-gray-500">{lead.tier}</p>
       </div>
-      {lead.is_legendary && (
+      {lead.tier === 'LEGENDARY' && (
         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500 text-black uppercase">
           ★
         </span>
@@ -116,23 +106,18 @@ interface PackCardProps {
 export function PackCard({ pack }: PackCardProps) {
   const router = useRouter()
   const [state, setState] = useState<CardState>({ phase: 'idle' })
-  const [showReveal, setShowReveal] = useState(false)
+  // 'none' | 'preview' = cracked state modal | 'full' = post-purchase reveal
+  const [revealMode, setRevealMode] = useState<'none' | 'preview' | 'full'>('none')
+  // Persists through purchase so full reveal can display real leads
+  const [crackedLeads, setCrackedLeads] = useState<ScoredLead[]>([])
+
   const isLegendary = pack.income_tier === 'LEGENDARY'
   const isExclusive = pack.pack_type === 'EXCLUSIVE'
   const spotsLeft = pack.max_buyers - pack.buyer_count
 
-  const mockLeads = useMemo(() => getMockLeadsForPack(pack.id), [pack.id])
-  const avgOvr = useMemo(() => {
-    if (mockLeads.length === 0) return 0
-    return Math.round(mockLeads.reduce((sum, l) => sum + l.ovr, 0) / mockLeads.length)
-  }, [mockLeads])
-  const hasLegendaryLead = useMemo(
-    () => mockLeads.some(l => getLeadTier(calculateLeadOVR(l.stats)) === 'LEGENDARY'),
-    [mockLeads]
-  )
-
   // Tick the countdown when in cracked state.
-  // setState uses functional form so secondsLeft is read from prev, not captured.
+  // Does NOT call router.refresh() on expiry — that would remount and close the modal.
+  // The marketplace will refresh naturally when the modal is closed.
   useEffect(() => {
     if (state.phase !== 'cracked') return
 
@@ -141,8 +126,8 @@ export function PackCard({ pack }: PackCardProps) {
         if (prev.phase !== 'cracked') return prev
         const next = prev.secondsLeft - 1
         if (next <= 0) {
-          // Timer expired — release pack back to marketplace
-          router.refresh()
+          // Timer expired — close modal and go back to idle
+          setRevealMode('none')
           return { phase: 'idle' }
         }
         return { ...prev, secondsLeft: next }
@@ -150,7 +135,7 @@ export function PackCard({ pack }: PackCardProps) {
     }, 1000)
 
     return () => clearInterval(id)
-  }, [state.phase, router])
+  }, [state.phase])
 
   const handleCrack = useCallback(async () => {
     setState({ phase: 'cracking' })
@@ -165,12 +150,13 @@ export function PackCard({ pack }: PackCardProps) {
         setState({ phase: 'error', message: json.error ?? 'Could not crack pack.' })
         return
       }
+      setCrackedLeads(json.data.leads ?? [])
       setState({
         phase: 'cracked',
         expiresAt: Date.now() + json.data.remaining_seconds * 1000,
         secondsLeft: json.data.remaining_seconds,
-        leads: json.data.leads,
       })
+      setRevealMode('preview')
     } catch {
       setState({ phase: 'error', message: 'Network error. Please try again.' })
     }
@@ -190,16 +176,71 @@ export function PackCard({ pack }: PackCardProps) {
       const json = await res.json()
       if (!res.ok || !json.success) {
         setState({ phase: 'error', message: json.error ?? 'Purchase failed.' })
+        setRevealMode('none')
         return
       }
       setState({ phase: 'purchased' })
-      router.refresh()
+      // Transition to full reveal — router.refresh() happens when user closes the full modal
+      setRevealMode('full')
     } catch {
       setState({ phase: 'error', message: 'Network error. Please try again.' })
+      setRevealMode('none')
     }
-  }, [pack.id, router])
+  }, [pack.id])
 
-  // ── Purchased state ───────────────────────────────────────────────────────
+  const handleRevealClose = useCallback(() => {
+    setRevealMode('none')
+    // Refresh marketplace after the user closes either modal
+    router.refresh()
+  }, [router])
+
+  // ── PackReveal modal — shown in preview (cracked) or full (purchased) mode ──
+  if (revealMode === 'preview' && state.phase === 'cracked') {
+    return (
+      <PackReveal
+        packId={pack.id}
+        packLabel={pack.pack_label}
+        priceTTD={pack.price_ttd}
+        leads={crackedLeads}
+        mode="preview"
+        timerSeconds={state.secondsLeft}
+        onPurchase={handlePurchase}
+        purchasing={false}
+        onClose={handleRevealClose}
+      />
+    )
+  }
+
+  if (revealMode === 'preview' && state.phase === 'purchasing') {
+    return (
+      <PackReveal
+        packId={pack.id}
+        packLabel={pack.pack_label}
+        priceTTD={pack.price_ttd}
+        leads={crackedLeads}
+        mode="preview"
+        timerSeconds={0}
+        onPurchase={() => {}}
+        purchasing={true}
+        onClose={handleRevealClose}
+      />
+    )
+  }
+
+  if (revealMode === 'full') {
+    return (
+      <PackReveal
+        packId={pack.id}
+        packLabel={pack.pack_label}
+        priceTTD={pack.price_ttd}
+        leads={crackedLeads}
+        mode="full"
+        onClose={handleRevealClose}
+      />
+    )
+  }
+
+  // ── Purchased state (if modal was closed already) ─────────────────────────
   if (state.phase === 'purchased') {
     return (
       <div className="relative flex flex-col items-center justify-center gap-3 rounded-xl border border-green-500/40 p-6 bg-gray-900 min-h-[280px]">
@@ -214,51 +255,7 @@ export function PackCard({ pack }: PackCardProps) {
     )
   }
 
-  // ── Cracked state ─────────────────────────────────────────────────────────
-  if (state.phase === 'cracked') {
-    return (
-      <div
-        className={`relative flex flex-col gap-4 rounded-xl border p-5 bg-gray-900 ${
-          isLegendary ? 'border-amber-500/60' : 'border-indigo-500/50'
-        }`}
-      >
-        {/* Header row */}
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="text-2xl font-black text-white">{pack.pack_label}</span>
-            <p className="text-xs text-gray-500 mt-0.5">{pack.pack_size} leads · {formatCurrency(pack.price_ttd)}</p>
-          </div>
-          <TimerRing secondsLeft={state.secondsLeft} />
-        </div>
-
-        {/* Lead previews */}
-        <div className="rounded-lg border border-gray-800 bg-gray-950 px-3 py-1">
-          <p className="text-[10px] text-gray-600 uppercase tracking-widest py-1.5 font-semibold">
-            Preview — {state.leads.length} lead{state.leads.length !== 1 ? 's' : ''}
-          </p>
-          {state.leads.length === 0 ? (
-            <p className="text-xs text-gray-600 py-2">No leads in preview.</p>
-          ) : (
-            state.leads.map((lead) => <LeadRow key={lead.id} lead={lead} />)
-          )}
-        </div>
-
-        {/* Purchase CTA */}
-        <button
-          onClick={handlePurchase}
-          className="w-full py-3 rounded-lg bg-green-600 hover:bg-green-500 active:bg-green-700 text-white font-bold text-sm transition-colors"
-        >
-          Purchase Pack · {formatCurrency(pack.price_ttd)}
-        </button>
-
-        <p className="text-center text-[10px] text-gray-600">
-          Priority window — purchase before timer expires
-        </p>
-      </div>
-    )
-  }
-
-  // ── Purchasing state ──────────────────────────────────────────────────────
+  // ── Purchasing state (no modal open) ─────────────────────────────────────
   if (state.phase === 'purchasing') {
     return (
       <div className="relative flex flex-col items-center justify-center gap-3 rounded-xl border border-gray-700 p-6 bg-gray-900 min-h-[280px]">
@@ -268,17 +265,49 @@ export function PackCard({ pack }: PackCardProps) {
     )
   }
 
+  // ── Cracked state with timer — shown when modal was dismissed but timer active
+  if (state.phase === 'cracked') {
+    return (
+      <div
+        className={`relative flex flex-col gap-4 rounded-xl border p-5 bg-gray-900 ${
+          isLegendary ? 'border-amber-500/60' : 'border-indigo-500/50'
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="text-2xl font-black text-white">{pack.pack_label}</span>
+            <p className="text-xs text-gray-500 mt-0.5">{pack.pack_size} leads · {formatCurrency(pack.price_ttd)}</p>
+          </div>
+          <TimerRing secondsLeft={state.secondsLeft} />
+        </div>
+
+        <div className="rounded-lg border border-gray-800 bg-gray-950 px-3 py-1">
+          <p className="text-[10px] text-gray-600 uppercase tracking-widest py-1.5 font-semibold">
+            Preview — {crackedLeads.length} lead{crackedLeads.length !== 1 ? 's' : ''}
+          </p>
+          {crackedLeads.length === 0 ? (
+            <p className="text-xs text-gray-600 py-2">No leads in preview.</p>
+          ) : (
+            crackedLeads.map((lead) => <LeadRow key={lead.id} lead={lead} />)
+          )}
+        </div>
+
+        <button
+          onClick={() => setRevealMode('preview')}
+          className="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-colors"
+        >
+          View Preview & Purchase
+        </button>
+
+        <p className="text-center text-[10px] text-gray-600">
+          Priority window active — purchase before timer expires
+        </p>
+      </div>
+    )
+  }
+
   // ── Idle / cracking / error state ─────────────────────────────────────────
   return (
-    <>
-      {showReveal && (
-        <PackReveal
-          packId={pack.id}
-          leads={mockLeads}
-          onClose={() => setShowReveal(false)}
-        />
-      )}
-
     <div
       className={`relative flex flex-col gap-5 rounded-xl border p-6 bg-gray-900 transition-colors ${
         isLegendary
@@ -297,23 +326,15 @@ export function PackCard({ pack }: PackCardProps) {
           </p>
         </div>
         <div className="flex flex-col items-end gap-1.5">
-          {hasLegendaryLead && (
-            <span className="text-xs font-black px-2.5 py-1 rounded-full bg-amber-500 text-black uppercase tracking-wider">
-              ★ Legendary Pack
-            </span>
-          )}
-          {isLegendary && !hasLegendaryLead && (
+          {isLegendary && (
             <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500 text-black uppercase tracking-wider">
-              Legendary
+              ★ Legendary
             </span>
           )}
-          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-gray-800 text-gray-300 tabular-nums">
-            Avg OVR {avgOvr}
-          </span>
         </div>
       </div>
 
-      {/* Pack name + type badges */}
+      {/* Pack type badges */}
       <div className="flex gap-2 flex-wrap">
         <span
           className={`text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide ${
@@ -346,10 +367,7 @@ export function PackCard({ pack }: PackCardProps) {
 
       {/* CTA */}
       <button
-        onClick={() => {
-          setShowReveal(true)
-          handleCrack()
-        }}
+        onClick={handleCrack}
         disabled={state.phase === 'cracking'}
         className="mt-auto w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold transition-colors flex items-center justify-center gap-2"
       >
@@ -365,6 +383,5 @@ export function PackCard({ pack }: PackCardProps) {
         )}
       </button>
     </div>
-    </>
   )
 }
