@@ -45,11 +45,24 @@ export async function getPurchasedPacks(agent_id: string): Promise<PurchasedPack
 
 export async function getLeadsForPack(pack_id: string): Promise<PackLead[]> {
   const { rows } = await pool.query<PackLead>(
-    `SELECT l.id, l.full_name, l.phone, l.email, l.parish, l.estimated_income_ttd, l.source
+    `SELECT
+       l.id,
+       COALESCE(
+         NULLIF(TRIM(
+           COALESCE(l.fact_find->>'first_name', '') || ' ' ||
+           COALESCE(l.fact_find->>'last_name',  '')
+         ), ''),
+         'Unknown'
+       )                                                       AS full_name,
+       l.fact_find->>'phone'                                   AS phone,
+       l.fact_find->>'email'                                   AS email,
+       l.fact_find->>'parish'                                  AS parish,
+       NULLIF(l.fact_find->>'monthly_income', '')::integer     AS estimated_income_ttd,
+       l.source
      FROM pack_leads pl
      JOIN leads l ON l.id = pl.lead_id
      WHERE pl.pack_id = $1
-     ORDER BY pl.position, l.full_name`,
+     ORDER BY pl.position`,
     [pack_id]
   )
   return rows
