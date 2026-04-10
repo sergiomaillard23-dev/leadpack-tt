@@ -7,9 +7,9 @@ export default async function MarketplacePage() {
   const packs = await getAvailablePacks()
 
   // Always show exactly 3 tier slots — one per pack type
-  const standard  = packs.find(p => p.pack_name === 'STARTER')    ?? null
-  const premium   = packs.find(p => p.pack_name === 'COMMUNITY')   ?? null
-  const legendary = packs.find(p => p.pack_name === 'EXCLUSIVE')   ?? null
+  const standard  = packs.find(p => p.pack_name === 'STANDARD')   ?? null
+  const premium   = packs.find(p => p.pack_name === 'PREMIUM')     ?? null
+  const legendary = packs.find(p => p.pack_name === 'LEGENDARY')   ?? null
 
   return (
     <div className="max-w-5xl mx-auto">

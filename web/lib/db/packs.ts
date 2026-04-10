@@ -2,8 +2,8 @@ import pool from '@/lib/db/client'
 
 export type Pack = {
   id: string
-  pack_label: 'A' | 'B' | 'C' | 'D'
-  pack_name: 'STARTER' | 'EXCLUSIVE_STARTER' | 'COMMUNITY' | 'EXCLUSIVE'
+  pack_label: 'A' | 'B' | 'C'
+  pack_name: 'STANDARD' | 'PREMIUM' | 'LEGENDARY'
   lead_batch_id: string
   pack_type: 'EXCLUSIVE' | 'COMMUNITY'
   income_tier: 'STANDARD' | 'LEGENDARY'
