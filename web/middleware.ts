@@ -1,63 +1,41 @@
-import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return request.cookies.getAll() },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  let user: { email?: string } | null = null
-  try {
-    const { data } = await supabase.auth.getUser()
-    user = data.user
-  } catch {
-    // If Supabase is unreachable, treat as unauthenticated
-  }
+/**
+ * Lightweight middleware — no network calls, no Supabase SDK.
+ * Only checks for the presence of a Supabase auth cookie so the edge
+ * function stays fast and never times out.
+ *
+ * Full session verification (including admin gate) happens inside each
+ * server component / route handler via createClient().
+ */
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  const isAuthRoute     = pathname.startsWith('/login') ||
-                          pathname.startsWith('/register') ||
-                          pathname.startsWith('/auth/')
-  const isOnboarding    = pathname.startsWith('/onboarding')
-  const isAdminRoute    = pathname.startsWith('/admin')
-  const isLandingPage   = pathname === '/'
+  const isAuthRoute  = pathname.startsWith('/login') ||
+                       pathname.startsWith('/register') ||
+                       pathname.startsWith('/auth/')
+  const isLandingPage = pathname === '/'
+  const isPublicAsset = pathname.startsWith('/_next') ||
+                        pathname.startsWith('/favicon')
 
-  // 1. Unauthenticated — send to login (except auth routes and the public landing page)
-  if (!user && !isAuthRoute && !isLandingPage) {
+  if (isAuthRoute || isLandingPage || isPublicAsset) {
+    return NextResponse.next()
+  }
+
+  // Supabase SSR stores the session in a cookie named
+  // `sb-<project-ref>-auth-token`. Check for any sb-*-auth-token cookie.
+  const hasSession = request.cookies.getAll().some(
+    ({ name }) => name.startsWith('sb-') && name.endsWith('-auth-token')
+  )
+
+  if (!hasSession) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  // 2. Admin routes — only ADMIN_EMAILS allowed
-  if (isAdminRoute && user) {
-    const adminEmails = (process.env.ADMIN_EMAILS ?? '')
-      .split(',')
-      .map((e) => e.trim())
-    if (!adminEmails.includes(user.email ?? '')) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/marketplace'
-      return NextResponse.redirect(url)
-    }
-  }
-
-  return supabaseResponse
+  return NextResponse.next()
 }
 
 export const config = {
