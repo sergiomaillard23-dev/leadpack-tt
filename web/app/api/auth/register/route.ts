@@ -4,11 +4,15 @@ import { provisionAgent } from '@/lib/db/agents'
 import { uploadKycDocument } from '@/lib/supabase/storage'
 import { upsertDocument } from '@/lib/db/kyc'
 import { normalizePhone } from '@/lib/utils'
+import { verifyKycDocuments } from '@/lib/ai/kycVerify'
 import {
   KYC_ALLOWED_MIME_TYPES,
   KYC_MAX_FILE_BYTES,
   KYC_DOC_FIELDS,
 } from '@/lib/constants'
+
+// Give AI verification enough time to call Claude.
+export const maxDuration = 60
 
 // Plain anon client — no SSR cookie management needed here.
 // We only need to create the user + trigger the confirmation email.
@@ -115,9 +119,14 @@ export async function POST(req: NextRequest) {
       await upsertDocument(user.id, field, path)
     }
 
-    // provisionAgent already inserts with kyc_status = 'PENDING'.
-    // upsertDocument records are now in place — admin can review immediately
-    // after the agent confirms their email.
+    // AI verification — runs before the agent confirms their email.
+    // By the time they click the confirmation link, kyc_status is already
+    // APPROVED, REJECTED, or PENDING (manual review) so /auth/callback routes them correctly.
+    const docs = KYC_DOC_FIELDS.map((field) => ({ docType: field, file: files[field] }))
+    await verifyKycDocuments(user.id, docs).catch((err) =>
+      // Non-fatal: agent lands on PENDING and admin can review manually.
+      console.error('[POST /api/auth/register] KYC verification failed', err)
+    )
 
     return NextResponse.json({ success: true })
   } catch (err) {

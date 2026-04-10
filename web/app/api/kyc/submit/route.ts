@@ -4,6 +4,10 @@ import { getAgentByEmail } from '@/lib/db/agents'
 import { uploadKycDocument } from '@/lib/supabase/storage'
 import { upsertDocument, setKycStatus } from '@/lib/db/kyc'
 import { KYC_ALLOWED_MIME_TYPES, KYC_MAX_FILE_BYTES, KYC_DOC_FIELDS } from '@/lib/constants'
+import { verifyKycDocuments } from '@/lib/ai/kycVerify'
+
+// Give AI verification enough time to download files and call Claude.
+export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
@@ -67,7 +71,20 @@ export async function POST(req: NextRequest) {
       await upsertDocument(agent.id, field, path)
     }
     await setKycStatus(agent.id, 'PENDING')
-    return NextResponse.json({ success: true })
+
+    // Phase 3: AI verification — reads files from memory, no re-download needed.
+    // Sets kyc_status to APPROVED, REJECTED, or leaves PENDING for manual review.
+    const docs = KYC_DOC_FIELDS.map((field) => ({ docType: field, file: files[field] }))
+    const verdict = await verifyKycDocuments(agent.id, docs)
+
+    if (verdict.status === 'REJECTED') {
+      return NextResponse.json({
+        success: true,
+        kycStatus: 'REJECTED',
+        reason: verdict.reason,
+      })
+    }
+    return NextResponse.json({ success: true, kycStatus: verdict.status })
   } catch (err) {
     console.error('[POST /api/kyc/submit]', err)
     return NextResponse.json({ success: false, error: 'Upload failed' }, { status: 500 })
