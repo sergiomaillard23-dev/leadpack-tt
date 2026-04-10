@@ -3,8 +3,8 @@ import { createClient } from '@supabase/supabase-js'
 import { provisionAgent } from '@/lib/db/agents'
 import { uploadKycDocument } from '@/lib/supabase/storage'
 import { upsertDocument } from '@/lib/db/kyc'
+import { normalizePhone } from '@/lib/utils'
 import {
-  PHONE_REGEX,
   KYC_ALLOWED_MIME_TYPES,
   KYC_MAX_FILE_BYTES,
   KYC_DOC_FIELDS,
@@ -34,9 +34,10 @@ export async function POST(req: NextRequest) {
   if (!name || name.length < 2) {
     return NextResponse.json({ success: false, error: 'Full name is required' }, { status: 400 })
   }
-  if (!phone || !PHONE_REGEX.test(phone)) {
+  const normalizedPhone = phone ? normalizePhone(phone) : null
+  if (!normalizedPhone) {
     return NextResponse.json(
-      { success: false, error: 'Phone must be in format 1-868-XXX-XXXX' },
+      { success: false, error: 'Enter a valid T&T phone number (e.g. 18681234567)' },
       { status: 400 }
     )
   }
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
     email,
     password,
     options: {
-      data: { full_name: name, phone },
+      data: { full_name: name, phone: normalizedPhone },
       emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
     },
   })
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
   // ── Provision agent row, upload docs, set PENDING ─────────────────────────
   // All storage uploads happen before any DB writes (fail-fast).
   try {
-    await provisionAgent(user.id, name, phone, email)
+    await provisionAgent(user.id, name, normalizedPhone, email)
 
     const uploads: Array<{ field: typeof KYC_DOC_FIELDS[number]; path: string }> = []
     for (const field of KYC_DOC_FIELDS) {

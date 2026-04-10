@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import Link from 'next/link'
-import { PHONE_REGEX } from '@/lib/constants'
+import { normalizePhone } from '@/lib/utils'
 
 // ── Document config ───────────────────────────────────────────────────────────
 
@@ -63,8 +63,8 @@ export default function RegisterPage() {
   function handleContinue(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
-    if (!PHONE_REGEX.test(phone)) {
-      setError('Phone must be in format 1-868-XXX-XXXX')
+    if (!normalizePhone(phone)) {
+      setError('Enter a valid T&T number — e.g. 18681234567 or 868-123-4567')
       return
     }
     if (password.length < 8) {
@@ -196,11 +196,11 @@ export default function RegisterPage() {
             />
             <div>
               <input
-                type="text" placeholder="Phone (1-868-XXX-XXXX)" value={phone}
+                type="tel" placeholder="Phone (e.g. 18681234567 or 868-123-4567)" value={phone}
                 onChange={e => setPhone(e.target.value)}
                 required className={inputClass}
               />
-              <p className="text-xs text-gray-600 mt-1 ml-1">T&T numbers only</p>
+              <p className="text-xs text-gray-600 mt-1 ml-1">Any T&T format accepted — we'll normalise it</p>
             </div>
             <input
               type="email" placeholder="Email address" value={email}
