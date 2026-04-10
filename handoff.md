@@ -1,7 +1,7 @@
 # LeadPack T&T — Handoff Document
-**Last updated:** 2026-04-09  
-**Branch:** `feature/web-scaffold` (not yet merged to `main`)  
-**Status:** ✅ Full marketplace flow working — crack, preview reveal, purchase, full lead reveal, wallet, journal all live
+**Last updated:** 2026-04-10  
+**Branch:** `master` (deployed to Vercel)  
+**Status:** ✅ Full marketplace flow working — crack, preview reveal, purchase, full lead reveal, wallet, journal all live. Landing page updated. Vercel deployed and stable.
 
 ---
 
@@ -22,7 +22,7 @@ Gamified insurance lead marketplace for T&T agents. Agents buy packs of 20 leads
 | Background Jobs | n8n (local) | ✅ Lead intake pipeline live |
 | Payments | WiPay / FAC | ❌ Not started |
 | Messaging | WhatsApp Cloud API | ❌ Not started |
-| Deployment | Vercel (frontend) | ❌ Not deployed yet |
+| Deployment | Vercel (frontend) | ✅ Live on Vercel |
 
 ---
 
@@ -165,9 +165,10 @@ leadpack-tt/
 | 010 lead_stats JSONB + calculated_ovr on leads | ✅ |
 
 ### Test Data (Supabase)
-- Dev agent: `volatusfinancial33@gmail.com` — APPROVED, wallet balance set
-- 7 packs seeded AVAILABLE (1 original + 6 from seed: 2 STANDARD batches + 1 LEGENDARY batch)
-- Mock leads (5 ScoredLeads with full OVR stats) used for preview/reveal until real leads are wired in
+- Dev agent: `volatusfinancial33@gmail.com` — APPROVED, wallet topped up to TT$10,000 (1,000,000 cents)
+- 3 packs seeded AVAILABLE: 1 STANDARD (5 leads, TT$150), 1 PREMIUM (20 leads, TT$600), 1 LEGENDARY (20 leads, TT$2,000)
+- 45 real leads inserted via `seed_test_data.sql` with `fact_find` JSONB — OVR scored dynamically at crack time
+- LEGENDARY leads: 8 with monthly_income ≥ 25,000 TTD created within 1h (meet FIN+FRH gate)
 
 ---
 
@@ -287,9 +288,7 @@ cd web && npm run dev
 
 1. **Wire real leads into PackReveal** — crack API already returns `leads` array; replace `getMockLeadsForPack()` in PackCard with the leads from the crack API response (requires `leads` to have `lead_stats` JSONB populated via `src/import_excel_leads.py`)
 
-2. **Merge `feature/web-scaffold` → `main`** — push to GitHub, deploy to Vercel
-
-3. **Wallet top-up** — WiPay/FAC integration: `POST /api/wallet/topup` + `POST /api/wallet/topup/callback` webhook, idempotency via `gateway_ref`
+2. **Wallet top-up** — WiPay/FAC integration: `POST /api/wallet/topup` + `POST /api/wallet/topup/callback` webhook, idempotency via `gateway_ref`
 
 4. **Upstash Redis timers** — replace `pack_cracks` DB-based expiry with Redis keys (`pack_timer:{pack_id}:{agent_id}`) for true serverless compatibility
 
@@ -300,6 +299,37 @@ cd web && npm run dev
 ---
 
 ## Session History
+
+### Session 6 (2026-04-10): Vercel Fix + Marketplace Redesign + Landing Page Update
+
+**Vercel middleware crash fixed:**
+- Root cause: `next@14.2.35` bundles `node:async_hooks` into Edge Runtime middleware — Vercel rejects it at invocation (all routes returned `MIDDLEWARE_INVOCATION_FAILED`)
+- Fix: downgraded `next` to `14.2.20` in `web/package.json` — all routes returned 200
+- Also added `serverComponentsExternalPackages: ['pg']` to `next.config.mjs`
+
+**Marketplace redesigned (always 3 fixed tier slots):**
+- `marketplace/page.tsx`: uses `.find()` per `pack_name` and always renders all 3 `<PackCard>` slots (null-safe)
+- `PackCard.tsx` fully rewritten with distinct per-tier visual design:
+  - STANDARD: cyan border/glow, ⚡ icon, 5 leads, TT$150
+  - PREMIUM: violet border/glow, 💎 icon, 20 leads, TT$600
+  - LEGENDARY: amber border/glow, ★ icon, 20 leads, TT$2,000
+- When no pack is available for a tier, shows a disabled "No packs available" slot
+
+**PackReveal bug fixes:**
+- Removed duplicate `onClick` on outer div causing double-flip in preview mode
+- Fixed stale closure in `handleRevealAll` using `useRef` to track latest `revealed` state across async loop
+
+**Test data seeded (`seed_test_data.sql`):**
+- Wallet topped to TT$10,000; 3 lead batches + 3 packs + 45 leads + 45 `pack_leads` entries inserted
+- STANDARD: 5 leads; PREMIUM: 20 leads; LEGENDARY: 20 leads (8 Legendary-gate, 12 Gold)
+
+**Landing page updated (all components corrected to match 3-tier product):**
+- `HeroSection.tsx`: decorative cards now show correct prices, lead counts, buyer slots
+- `PricingTiers.tsx`: Standard 5 leads/cyan, Premium 3 buyers, Legendary amber; "Pro Required" badge removed
+- `HowItWorks.tsx`: Step 2 now lists correct lead counts per tier
+- `FAQ.tsx`: first answer lists all three tiers; Premium buyer count corrected to 3
+
+**Codex CLI installed and authenticated** (OpenAI Codex v0.118.0 via ChatGPT login)
 
 ### Session 5 (2026-04-09): Pack Reveal UX Redesign
 - **Root cause fixed:** `router.refresh()` inside the timer `setInterval` was remounting the entire PackCard on every expiry, resetting `showReveal` to false and closing the modal after ~5 seconds
