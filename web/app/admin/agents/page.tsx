@@ -37,7 +37,10 @@ export default async function AdminAgentsPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!isAdmin(user?.email)) redirect('/marketplace')
 
-  const agents = await getAllAgents()
+  const agents = await getAllAgents().catch((err) => {
+    console.error('[/admin/agents] getAllAgents failed:', err?.message ?? err)
+    return []
+  })
 
   return (
     <div className="min-h-screen bg-gray-950 p-8">
@@ -54,6 +57,12 @@ export default async function AdminAgentsPage() {
             ← KYC Review
           </Link>
         </div>
+
+        {agents.length === 0 && (
+          <div className="bg-gray-900 border border-gray-800 rounded-xl py-16 text-center mb-4">
+            <p className="text-gray-500">No agents found — check Vercel logs for DB errors.</p>
+          </div>
+        )}
 
         <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
