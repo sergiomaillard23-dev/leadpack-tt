@@ -4,7 +4,7 @@ import { useState } from 'react'
 const QUESTIONS = [
   {
     q: 'What is LeadPack T&T?',
-    a: 'LeadPack is a lead marketplace built exclusively for insurance agents in Trinidad & Tobago. We deliver packs of 20 verified leads organised by exclusivity tier and income segment, so you spend more time closing and less time prospecting.',
+    a: 'LeadPack is a lead marketplace built exclusively for insurance agents in Trinidad & Tobago. We deliver packs of verified leads organised by tier — Standard (5 leads), Premium (20 leads), and Legendary (20 high net worth leads) — so you spend more time closing and less time prospecting.',
   },
   {
     q: 'How do I get started?',
@@ -16,7 +16,7 @@ const QUESTIONS = [
   },
   {
     q: 'Can multiple agents buy the same leads?',
-    a: 'It depends on the tier. Standard packs are sold to up to 3 agents. Premium packs allow up to 2 buyers. Legendary packs are fully exclusive — only one agent ever receives those leads.',
+    a: 'It depends on the tier. Standard packs are sold to up to 3 agents. Premium packs are also shared with up to 3 agents. Legendary packs are fully exclusive — only one agent ever receives those leads.',
   },
   {
     q: 'What payment methods do you accept?',

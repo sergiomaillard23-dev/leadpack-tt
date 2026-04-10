@@ -9,6 +9,8 @@ interface DecorativePackCardProps {
   label: string
   price: string
   buyers: string
+  leads: number
+  maxBuyers: number
   floatClass: string
 }
 
@@ -36,7 +38,7 @@ const TIER_CONFIG: Record<PackTier, { border: string; bg: string; badge: string;
   },
 }
 
-function DecorativePackCard({ tier, label, price, buyers, floatClass }: DecorativePackCardProps) {
+function DecorativePackCard({ tier, label, price, buyers, leads, maxBuyers, floatClass }: DecorativePackCardProps) {
   const cfg = TIER_CONFIG[tier]
   return (
     <div
@@ -73,12 +75,12 @@ function DecorativePackCard({ tier, label, price, buyers, floatClass }: Decorati
 
       {/* Divider + leads count */}
       <div className="mt-4 pt-3 border-t border-white/[0.08] flex items-center justify-between">
-        <span className="text-[11px] text-white/40 uppercase tracking-widest">20 LEADS</span>
+        <span className="text-[11px] text-white/40 uppercase tracking-widest">{leads} LEADS</span>
         <div className="flex gap-1">
           {[...Array(3)].map((_, i) => (
             <div
               key={i}
-              className={`w-1.5 h-1.5 rounded-full ${i < (tier === 'standard' ? 3 : tier === 'premium' ? 2 : 1) ? 'bg-white/50' : 'bg-white/10'}`}
+              className={`w-1.5 h-1.5 rounded-full ${i < maxBuyers ? 'bg-white/50' : 'bg-white/10'}`}
             />
           ))}
         </div>
@@ -185,23 +187,29 @@ export function HeroSection() {
             <div className="relative w-52 h-72">
               <DecorativePackCard
                 tier="standard"
-                label="B"
-                price="TT$1,200"
+                label="⚡"
+                price="TT$150"
                 buyers="SHARED · 3 BUYERS"
+                leads={5}
+                maxBuyers={3}
                 floatClass="pack-float-a"
               />
               <DecorativePackCard
                 tier="premium"
-                label="A"
-                price="TT$2,400"
-                buyers="LIMITED · 2 BUYERS"
+                label="💎"
+                price="TT$600"
+                buyers="SHARED · 3 BUYERS"
+                leads={20}
+                maxBuyers={3}
                 floatClass="pack-float-b"
               />
               <DecorativePackCard
                 tier="legendary"
-                label="C"
-                price="TT$3,600"
+                label="★"
+                price="TT$2,000"
                 buyers="EXCLUSIVE · 1 BUYER"
+                leads={20}
+                maxBuyers={1}
                 floatClass="pack-float-c"
               />
             </div>

@@ -2,18 +2,18 @@ const TIERS = [
   {
     name: 'Standard',
     tagline: 'Start building your pipeline',
-    price: 'TT$1,200',
+    price: 'TT$150',
+    leads: '5 leads',
     buyers: 'Up to 3 buyers',
     exclusivity: 'Community',
-    income: 'Mixed income leads',
     color: 'blue',
-    border: 'border-blue-500/30',
+    border: 'border-cyan-500/30',
     glow: 'glow-blue',
-    badge: 'bg-blue-600 text-white',
-    cta: 'bg-blue-600 hover:bg-blue-500',
-    icon: '◆',
+    badge: 'bg-cyan-600 text-white',
+    cta: 'bg-cyan-600 hover:bg-cyan-500 text-white',
+    icon: '⚡',
     features: [
-      '20 verified leads per pack',
+      '5 verified leads per pack',
       'Mixed income segments',
       'Shared with up to 3 agents',
       'Full contact details on purchase',
@@ -24,32 +24,32 @@ const TIERS = [
   {
     name: 'Premium',
     tagline: 'For agents who mean business',
-    price: 'TT$2,400',
-    buyers: 'Up to 2 buyers',
-    exclusivity: 'Limited',
-    income: 'Mid-to-high income leads',
+    price: 'TT$600',
+    leads: '20 leads',
+    buyers: 'Up to 3 buyers',
+    exclusivity: 'Community',
     color: 'purple',
     border: 'border-violet-500/40',
     glow: 'glow-purple',
     badge: 'bg-violet-600 text-white',
-    cta: 'bg-violet-600 hover:bg-violet-500',
-    icon: '◆◆',
+    cta: 'bg-violet-600 hover:bg-violet-500 text-white',
+    icon: '💎',
     features: [
       '20 verified leads per pack',
       'Mid-to-high income prospects',
-      'Shared with 1 other agent only',
+      'Shared with up to 3 agents',
       'Full contact details on purchase',
-      'Trader Journal + priority support',
+      'Trader Journal + WhatsApp outreach',
     ],
     featured: true,
   },
   {
     name: 'Legendary',
     tagline: 'High net worth. No competition.',
-    price: 'TT$3,600',
+    price: 'TT$2,000',
+    leads: '20 leads',
     buyers: '1 buyer only',
     exclusivity: 'Exclusive',
-    income: 'High net worth leads',
     color: 'gold',
     border: 'border-amber-500/50',
     glow: 'glow-gold-pulse',
@@ -58,13 +58,12 @@ const TIERS = [
     icon: '★',
     features: [
       '20 verified leads per pack',
-      'High net worth prospects only',
+      'High net worth prospects only (TT$25,000+/mo)',
       'Exclusively yours — zero sharing',
       'Full contact details on purchase',
-      'AI WhatsApp outreach (Pro)',
+      'AI WhatsApp outreach included',
     ],
     featured: false,
-    pro: true,
   },
 ]
 
@@ -94,7 +93,7 @@ export function PricingTiers() {
             <span className="text-violet-400">Edge</span>
           </h2>
           <p className="mt-4 text-lg text-[#6b7a9e] max-w-xl mx-auto">
-            Every pack contains 20 verified leads. Pick the exclusivity level that matches your ambition.
+            Three tiers. Three price points. All verified leads. Pick the exclusivity level that matches your ambition.
           </p>
         </div>
 
@@ -112,15 +111,6 @@ export function PricingTiers() {
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
                   <span className="text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-violet-600 text-white border border-violet-400/30 whitespace-nowrap">
                     Most Popular
-                  </span>
-                </div>
-              )}
-
-              {/* Pro required badge */}
-              {tier.pro && (
-                <div className="absolute top-4 right-4">
-                  <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/30">
-                    Pro Required
                   </span>
                 </div>
               )}
@@ -149,7 +139,7 @@ export function PricingTiers() {
                 <span className="text-sm text-[#6b7a9e] ml-1">/ pack</span>
               </div>
               <p className="text-sm text-[#6b7a9e] mb-6">
-                {tier.exclusivity} · {tier.buyers}
+                {tier.leads} · {tier.exclusivity} · {tier.buyers}
               </p>
 
               {/* Divider */}

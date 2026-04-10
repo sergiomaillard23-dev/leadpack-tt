@@ -24,7 +24,7 @@ const STEPS = [
     ),
     title: 'Browse the Marketplace',
     description:
-      'Pick from Standard, Premium, or Legendary packs — each containing 20 verified leads organised by exclusivity and income segment.',
+      'Pick from Standard (5 leads), Premium (20 leads), or Legendary (20 high net worth leads) packs — organised by exclusivity and income segment.',
     color: 'text-violet-400',
     bg: 'bg-violet-500/10',
     border: 'border-violet-500/20',
