@@ -1,20 +1,20 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import type { ScoredLead } from '@/lib/types/leads'
 import { LEGENDARY_OVR_THRESHOLD } from '@/lib/constants'
 import LeadCard from '@/components/leads/LeadCard'
 
-// ── Timer ring (same constants as PackCard) ───────────────────────────────────
+// ── Timer ring ────────────────────────────────────────────────────────────────
+
 const TOTAL_SECONDS = 300
 const RING_R = 36
 const RING_C = 2 * Math.PI * RING_R
 
 function TimerRing({ secondsLeft }: { secondsLeft: number }) {
-  const pct = Math.max(0, Math.min(1, secondsLeft / TOTAL_SECONDS))
-  const dash = pct * RING_C
-  const color =
-    secondsLeft > 180 ? '#22c55e' : secondsLeft > 60 ? '#eab308' : '#ef4444'
+  const pct   = Math.max(0, Math.min(1, secondsLeft / TOTAL_SECONDS))
+  const dash  = pct * RING_C
+  const color = secondsLeft > 180 ? '#22c55e' : secondsLeft > 60 ? '#eab308' : '#ef4444'
   const m = Math.floor(secondsLeft / 60)
   const s = secondsLeft % 60
 
@@ -24,10 +24,7 @@ function TimerRing({ secondsLeft }: { secondsLeft: number }) {
         <circle cx="36" cy="36" r={RING_R} strokeWidth="5" className="stroke-gray-700 fill-none" />
         <circle
           cx="36" cy="36" r={RING_R}
-          strokeWidth="5"
-          fill="none"
-          stroke={color}
-          strokeLinecap="round"
+          strokeWidth="5" fill="none" stroke={color} strokeLinecap="round"
           strokeDasharray={`${dash} ${RING_C}`}
           style={{ transition: 'stroke-dasharray 1s linear, stroke 0.5s ease' }}
         />
@@ -42,46 +39,38 @@ function TimerRing({ secondsLeft }: { secondsLeft: number }) {
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface PackRevealProps {
-  packId: string
-  packLabel: string
-  priceTTD: number
-  leads: ScoredLead[]
-  mode: 'preview' | 'full'
-  // preview mode props
+  packId:      string
+  packLabel:   string
+  priceTTD:    number
+  leads:       ScoredLead[]
+  mode:        'preview' | 'full'
   timerSeconds?: number
-  onPurchase?: () => void
-  purchasing?: boolean
-  // shared
-  onClose: () => void
+  onPurchase?:   () => void
+  purchasing?:   boolean
+  onClose:     () => void
 }
 
 type TierCount = { LEGENDARY: number; GOLD: number; SILVER: number; BRONZE: number }
 
-// ── Preview mode — single card teaser + purchase CTA ─────────────────────────
+// ── Preview mode ──────────────────────────────────────────────────────────────
 
 function PreviewMode({
-  leads,
-  packLabel,
-  priceTTD,
-  timerSeconds,
-  onPurchase,
-  purchasing,
-  onClose,
+  leads, packLabel, priceTTD, timerSeconds, onPurchase, purchasing, onClose,
 }: {
-  leads: ScoredLead[]
-  packLabel: string
-  priceTTD: number
+  leads:        ScoredLead[]
+  packLabel:    string
+  priceTTD:     number
   timerSeconds: number
-  onPurchase: () => void
-  purchasing: boolean
-  onClose: () => void
+  onPurchase:   () => void
+  purchasing:   boolean
+  onClose:      () => void
 }) {
   const previewLead = leads[0]
-  const [revealed, setRevealed] = useState(false)
+  const [revealed, setRevealed]     = useState(false)
   const [flashActive, setFlashActive] = useState(false)
 
-  const handleFlip = useCallback(() => {
-    if (revealed) return
+  const handleReveal = useCallback(() => {
+    if (revealed || !previewLead) return
     if (previewLead.ovr >= LEGENDARY_OVR_THRESHOLD) {
       setFlashActive(true)
       setTimeout(() => {
@@ -93,8 +82,19 @@ function PreviewMode({
     }
   }, [revealed, previewLead])
 
-  const formatPrice = (cents: number) => {
-    return `TT$${(cents / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`
+  const formatPrice = (cents: number) =>
+    `TT$${(cents / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`
+
+  // Guard: no leads in this pack
+  if (!previewLead) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gray-950/97 backdrop-blur-sm gap-6">
+        <p className="text-gray-400 text-sm">No leads to preview for this pack.</p>
+        <button onClick={onClose} className="text-gray-500 hover:text-white text-sm font-semibold">
+          ✕ Close
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -107,23 +107,18 @@ function PreviewMode({
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 shrink-0">
         <div>
-          <h2 className="text-lg font-black text-white tracking-tight">Pack {packLabel} — Preview</h2>
-          <p className="text-xs text-gray-500 mt-0.5">Flip the card to preview one lead</p>
+          <h2 className="text-lg font-black text-white tracking-tight">{packLabel} — Preview</h2>
+          <p className="text-xs text-gray-500 mt-0.5">Tap the card to reveal one lead</p>
         </div>
-        <button
-          onClick={onClose}
-          className="text-gray-500 hover:text-white transition-colors text-sm font-semibold"
-        >
+        <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors text-sm font-semibold">
           ✕
         </button>
       </div>
 
       {/* Content */}
       <div className="flex-1 flex flex-col items-center justify-center gap-8 px-6 py-8">
-        {/* Single card */}
-        <div onClick={handleFlip} className={!revealed ? 'cursor-pointer' : ''}>
-          <LeadCard lead={previewLead} revealed={revealed} onReveal={handleFlip} />
-        </div>
+        {/* Single card — click only via LeadCard's own button */}
+        <LeadCard lead={previewLead} revealed={revealed} onReveal={handleReveal} />
 
         {!revealed && (
           <p className="text-gray-500 text-sm animate-pulse">Tap the card to preview</p>
@@ -163,22 +158,21 @@ function PreviewMode({
   )
 }
 
-// ── Full mode — all leads, flip one-by-one or reveal all ─────────────────────
+// ── Full mode ─────────────────────────────────────────────────────────────────
 
-function FullMode({
-  leads,
-  onClose,
-}: {
-  leads: ScoredLead[]
-  onClose: () => void
-}) {
-  const [revealed, setRevealed] = useState<boolean[]>(() => leads.map(() => false))
+function FullMode({ leads, onClose }: { leads: ScoredLead[]; onClose: () => void }) {
+  const [revealed, setRevealed]       = useState<boolean[]>(() => leads.map(() => false))
   const [flashActive, setFlashActive] = useState(false)
   const [revealingAll, setRevealingAll] = useState(false)
 
-  const allRevealed = revealed.every(Boolean)
+  // Keep a ref in sync so handleRevealAll never reads stale state
+  const revealedRef = useRef<boolean[]>(revealed)
+  useEffect(() => { revealedRef.current = revealed }, [revealed])
 
-  const revealWithFlash = useCallback((index: number): Promise<void> => {
+  const allRevealed    = revealed.every(Boolean)
+  const revealedCount  = revealed.filter(Boolean).length
+
+  const revealOne = useCallback((index: number): Promise<void> => {
     return new Promise(resolve => {
       const lead = leads[index]
       if (lead.ovr >= LEGENDARY_OVR_THRESHOLD) {
@@ -199,17 +193,16 @@ function FullMode({
     if (revealingAll) return
     setRevealingAll(true)
     for (let i = 0; i < leads.length; i++) {
-      if (!revealed[i]) await revealWithFlash(i)
+      // Use ref to get the freshest revealed state on every iteration
+      if (!revealedRef.current[i]) await revealOne(i)
     }
     setRevealingAll(false)
-  }, [leads, revealed, revealingAll, revealWithFlash])
+  }, [leads, revealingAll, revealOne])
 
   const tierCounts = leads.reduce<TierCount>(
     (acc, lead) => { acc[lead.tier]++; return acc },
     { LEGENDARY: 0, GOLD: 0, SILVER: 0, BRONZE: 0 }
   )
-
-  const revealedCount = revealed.filter(Boolean).length
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-gray-950/97 backdrop-blur-sm overflow-y-auto">
@@ -222,14 +215,9 @@ function FullMode({
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 shrink-0 sticky top-0 bg-gray-950/95 backdrop-blur-sm z-10">
         <div>
           <h2 className="text-lg font-black text-white tracking-tight">Pack Reveal</h2>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {revealedCount} / {leads.length} revealed
-          </p>
+          <p className="text-xs text-gray-500 mt-0.5">{revealedCount} / {leads.length} revealed</p>
         </div>
-        <button
-          onClick={onClose}
-          className="text-gray-500 hover:text-white transition-colors text-sm font-semibold"
-        >
+        <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors text-sm font-semibold">
           ✕ Close
         </button>
       </div>
@@ -241,7 +229,11 @@ function FullMode({
             key={lead.id}
             lead={lead}
             revealed={revealed[i]}
-            onReveal={() => !revealed[i] && revealWithFlash(i)}
+            onReveal={() => {
+              // Block individual clicks while reveal-all is running
+              if (revealingAll || revealed[i]) return
+              revealOne(i)
+            }}
           />
         ))}
       </div>
@@ -294,36 +286,20 @@ function FullMode({
   )
 }
 
-// ── PackReveal — routes to the correct mode ───────────────────────────────────
+// ── PackReveal ────────────────────────────────────────────────────────────────
 
 export default function PackReveal({
-  packLabel,
-  priceTTD,
-  leads,
-  mode,
-  timerSeconds = 0,
-  onPurchase,
-  purchasing = false,
-  onClose,
+  packLabel, priceTTD, leads, mode,
+  timerSeconds = 0, onPurchase, purchasing = false, onClose,
 }: PackRevealProps) {
   if (mode === 'preview') {
     return (
       <PreviewMode
-        leads={leads}
-        packLabel={packLabel}
-        priceTTD={priceTTD}
-        timerSeconds={timerSeconds}
-        onPurchase={onPurchase ?? (() => {})}
-        purchasing={purchasing}
-        onClose={onClose}
+        leads={leads} packLabel={packLabel} priceTTD={priceTTD}
+        timerSeconds={timerSeconds} onPurchase={onPurchase ?? (() => {})}
+        purchasing={purchasing} onClose={onClose}
       />
     )
   }
-
-  return (
-    <FullMode
-      leads={leads}
-      onClose={onClose}
-    />
-  )
+  return <FullMode leads={leads} onClose={onClose} />
 }
