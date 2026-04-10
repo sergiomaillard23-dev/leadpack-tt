@@ -22,7 +22,13 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  let user: { email?: string } | null = null
+  try {
+    const { data } = await supabase.auth.getUser()
+    user = data.user
+  } catch {
+    // If Supabase is unreachable, treat as unauthenticated
+  }
   const { pathname } = request.nextUrl
 
   const isAuthRoute     = pathname.startsWith('/login') ||
