@@ -200,7 +200,7 @@ export default function RegisterPage() {
                 onChange={e => setPhone(e.target.value)}
                 required className={inputClass}
               />
-              <p className="text-xs text-gray-600 mt-1 ml-1">Any T&T format accepted — we'll normalise it</p>
+              <p className="text-xs text-gray-600 mt-1 ml-1">Any T&T format accepted — we&apos;ll normalise it</p>
             </div>
             <input
               type="email" placeholder="Email address" value={email}
