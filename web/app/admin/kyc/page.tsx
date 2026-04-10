@@ -25,9 +25,15 @@ function isAdmin(email: string | undefined): boolean {
 }
 
 export default async function AdminKycPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!isAdmin(user?.email)) redirect('/marketplace')
+  let userEmail: string | undefined
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    userEmail = user?.email
+  } catch {
+    redirect('/login')
+  }
+  if (!isAdmin(userEmail)) redirect('/marketplace')
 
   const rows = await getPendingAgents()
 

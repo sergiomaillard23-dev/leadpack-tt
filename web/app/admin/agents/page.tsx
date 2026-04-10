@@ -33,9 +33,15 @@ const KYC_COLORS: Record<string, string> = {
 }
 
 export default async function AdminAgentsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!isAdmin(user?.email)) redirect('/marketplace')
+  let userEmail: string | undefined
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    userEmail = user?.email
+  } catch {
+    redirect('/login')
+  }
+  if (!isAdmin(userEmail)) redirect('/marketplace')
 
   const agents = await getAllAgents().catch((err) => {
     console.error('[/admin/agents] getAllAgents failed:', err?.message ?? err)
