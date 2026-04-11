@@ -1,7 +1,7 @@
 # LeadPack T&T — Handoff Document
 **Last updated:** 2026-04-10  
 **Branch:** `master` (deployed to Vercel)  
-**Status:** ✅ All 10 stages complete — full Pro feature set shipped: KYC AI, upgrade flow, pipeline kanban, WhatsApp connector, analytics, CSV export, subscriptions cron, Pro badge.
+**Status:** ✅ Session 9 complete — landing page Pro section, dedicated upgrade sales page, company registration field, glow button design system.
 
 ---
 
@@ -45,10 +45,11 @@ leadpack-tt/
 │   ├── 009_pack_name_constraint.sql
 │   ├── 010_lead_stats_ovr.sql
 │   ├── 011_outreach_logs.sql          ← outreach_logs table (IF NOT EXISTS guards added)
-│   └── 012_legendary_pro.sql          ← is_legendary_pro, pro_membership_expires_at,
-│                                         pro_applications, whatsapp_templates, lead_notes,
-│                                         pack_subscriptions, pipeline_status on leads,
-│                                         release_at/pro_early_access_at on packs
+│   ├── 012_legendary_pro.sql          ← is_legendary_pro, pro_membership_expires_at,
+│   │                                     pro_applications, whatsapp_templates, lead_notes,
+│   │                                     pack_subscriptions, pipeline_status on leads,
+│   │                                     release_at/pro_early_access_at on packs
+│   └── 013_agent_company.sql          ← ADD COLUMN company TEXT on agents
 └── web/
     ├── vercel.json                    ← Cron: /api/cron/deliver-subscriptions daily 08:00 AST
     ├── app/
@@ -107,6 +108,8 @@ leadpack-tt/
     │       │   └── kyc/[agentId]/route.ts
     │       └── auth/callback/route.ts
     ├── components/
+    │   ├── ui/
+    │   │   └── Button.tsx             ← Reusable Button: variant (primary/secondary/pro/danger/success/ghost) + size (xs/sm/md/lg) + icon/loading props
     │   ├── layout/
     │   │   ├── Header.tsx             ← Shows ProBadge next to email for Pro members
     │   │   └── Sidebar.tsx            ← Free links (indigo); Pro links (amber gold border-l)
@@ -167,7 +170,11 @@ leadpack-tt/
     │       ├── templates.ts           ← full CRUD + setDefaultTemplate()
     │       ├── subscriptions.ts       ← getSubscriptions(), createSubscription(), claimDueSubscriptions()
     │       └── analytics.ts           ← getAnalytics() → funnel, OVR buckets, spend, close rate
-    ├── middleware.ts
+    ├── app/
+    │   ├── globals.css                ← Glow button CSS system: .btn-glow-indigo/amber/cyan/violet/red/green + .btn-ghost
+    │   └── (landing)/
+    │       └── landing.css            ← Duplicate of glow classes (guarantees landing bundle picks them up)
+    ├── middleware.ts                  ← /pro/upgrade whitelisted as public (no auth redirect)
     ├── tests/
     │   ├── setup.ts
     │   ├── lib/utils.test.ts
@@ -221,6 +228,7 @@ leadpack-tt/
 | 010 lead_stats JSONB + calculated_ovr | ✅ |
 | 011 outreach_logs table | ⬜ Pending apply |
 | 012 Legendary Pro (is_legendary_pro, pro_applications, whatsapp_templates, lead_notes, pipeline_status, pack_subscriptions) | ⬜ Pending apply |
+| 013 agents.company (company TEXT nullable) | ⬜ Pending apply |
 
 ### Test Data (Supabase)
 - Dev agent: `volatusfinancial33@gmail.com` — APPROVED, wallet TT$10,000
@@ -287,10 +295,12 @@ Agent clicks "Purchase"
 ```
 vercel.json: "0 12 * * *" UTC (08:00 AST daily)
   → GET /api/cron/deliver-subscriptions
-    → claimDueSubscriptions(): UPDATE pack_subscriptions
-        SET next_delivery_at = next_delivery_at + cycle_days
-        WHERE active = true AND next_delivery_at <= now()
-    → Returns fired count + summary grouped by agent
+    → deliverSubscriptions(): for each due subscription row:
+        → SELECT available pack of matching tier FOR UPDATE SKIP LOCKED
+        → Debit agent wallet (reject if insufficient funds)
+        → INSERT pack_purchase + wallet_transaction
+        → Advance next_delivery_at += cycle_days
+    → Returns { packs_delivered, packs_skipped, results[] }
 ```
 
 Set `CRON_SECRET` in Vercel env vars — Vercel injects it as `Authorization: Bearer <secret>` automatically.
@@ -364,20 +374,51 @@ cd web && npm run dev
 ## Immediate Next Steps
 
 ### Must-do before production
-1. **Apply migrations 011 + 012** to Supabase
+1. **Apply migrations 011, 012, 013** to Supabase (SQL editor or `supabase db push`)
 2. **Set `CRON_SECRET`** in Vercel environment variables
 3. **Wire LiveWiPayService** in `lib/payments/wipay.ts` (TODO stubs) + set `WIPAY_MODE=live`
 4. **Wallet top-up** — WiPay integration for credit purchases (`POST /api/wallet/topup` + callback)
 
 ### Backlog
 - **Upstash Redis timers** — replace DB-based `pack_cracks` expiry for true serverless compatibility
-- **Subscription pack delivery** — cron currently only advances timestamps; actual pack assignment to agent on delivery still needs wiring to `pack_purchases`
 - **Dispute system** — `POST /api/disputes`, admin review, `DISPUTE_REFUND` wallet transaction
 - **WhatsApp outreach logging** — `outreach_logs` table exists (migration 011); log every wa.me open event
+- **Pro upgrade page** — wire actual WiPay payment (`WIPAY_MODE=live`) so agents can self-serve upgrade
 
 ---
 
 ## Session History
+
+### Session 9 (2026-04-10): Landing Pro CTA, Sales Page, Company Field, Glow Buttons
+
+**Landing page Pro awareness:**
+- `ProSection.tsx` — new full-width section between PricingTiers and Testimonials: crown badge, headline, 6 benefit rows, mock dashboard preview (stat tiles + kanban strip + WhatsApp template card). Uses `.anim-1`/`.anim-2` (not `.reveal` — no IntersectionObserver exists). Price removed from landing — sends visitors to `/pro/upgrade` instead.
+- `Navbar.tsx` — added "Pro" anchor nav link + "Go Pro ✦" amber button (desktop + mobile). "Get Started" renamed to "Sign Up For Free". All three buttons now use `btn-glow-*` classes.
+- `FAQ.tsx` — 3 new Pro Q&As appended: "What is Legendary Pro?", "What tools do Pro members get?", "Can I cancel?"
+- `app/page.tsx` — `<ProSection />` imported and inserted.
+
+**Dedicated `/pro/upgrade` sales page (public):**
+- Rebuilt from minimal form wrapper into full pitch page: ROI tiles ("1 policy pays for it", "TT$417/mo", "~TT$14/day"), 6-benefit grid with expanded copy, large TT$5,000 price callout with framing ("One closed policy. That's all it takes to break even."), hero copy: "While other agents are relying on orphans and cold calling blind…"
+- Authenticated visitors see `UpgradeForm` inline. Unauthenticated visitors see "Sign Up For Free" CTA.
+- `middleware.ts` — `/pro/upgrade` added to public whitelist (previously redirected to /login).
+
+**Free monthly credits changed 5 → 150** (enough to buy a Standard pack). Updated in ProSection, FAQ, `/pro/upgrade` benefits and ROI tile.
+
+**Agent company/employer field (migration 013):**
+- `migrations/013_agent_company.sql` — `ALTER TABLE agents ADD COLUMN IF NOT EXISTS company TEXT`
+- `lib/db/agents.ts` — `company` added to `Agent` type, `getAgentByEmail` SELECT, and `provisionAgent()` param
+- `app/(auth)/register/page.tsx` — `<select>` dropdown in Step 1: Guardian Life, Maritime Insurance, Pan American Life Insurance Co. TT, Sagicor, TATIL, Broker (Independent), Other. Selecting "Other" reveals a free-text input. The typed value is what gets saved.
+- `app/api/auth/register/route.ts` — extracts `company` from FormData, passes to `provisionAgent()`
+
+**Glow button design system:**
+- `app/globals.css` — 7 CSS glow classes: `.btn-glow-indigo`, `.btn-glow-amber`, `.btn-glow-cyan`, `.btn-glow-violet`, `.btn-glow-red`, `.btn-glow-green`, `.btn-ghost`. Each has always-on multi-layer bloom, inner top-edge highlight, subtle top-lighter gradient, hover lift + intensified bloom, active scale-down.
+- `app/(landing)/landing.css` — same classes duplicated here so landing page bundle always includes them (globals.css and landing.css are separate bundles in Next.js).
+- `components/ui/Button.tsx` — new reusable Button component with `variant`/`size`/`icon`/`loading`/`fullWidth` props.
+- Applied to: PackCard crack buttons (cyan/violet/amber per tier), login submit, register submit + back, landing hero CTAs, UpgradeForm all steps, AdminKycTable approve/reject, Navbar "Sign Up For Free", ProSection CTA.
+
+**Bug fixes:**
+- Subscription delivery gap fixed — `deliverSubscriptions()` now fully purchases packs (debit wallet, insert pack_purchase + wallet_transaction, advance timestamp) rather than just advancing timestamps.
+- `/pro/upgrade` was redirecting unauthenticated visitors to `/login` — fixed by adding to middleware whitelist.
 
 ### Session 8 (2026-04-10): Analytics + CSV Export + Subscriptions Cron + Pro Badge (Stages 7–10)
 
