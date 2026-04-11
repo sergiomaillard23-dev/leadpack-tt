@@ -1,15 +1,25 @@
 import { PackCard } from '@/components/packs/PackCard'
 import { getAvailablePacks } from '@/lib/db/packs'
+import { getAgentByEmail, isActivePro } from '@/lib/db/agents'
+import { createClient } from '@/lib/supabase/server'
 import MarketTicker from '@/components/dashboard/MarketTicker'
 import NextDropTimer from '@/components/dashboard/NextDropTimer'
 
 export default async function MarketplacePage() {
-  const packs = await getAvailablePacks()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const [packs, agent] = await Promise.all([
+    getAvailablePacks(),
+    user?.email ? getAgentByEmail(user.email).catch(() => null) : Promise.resolve(null),
+  ])
+
+  const proUser = agent ? isActivePro(agent) : false
 
   // Always show exactly 3 tier slots — one per pack type
-  const standard  = packs.find(p => p.pack_name === 'STANDARD')   ?? null
-  const premium   = packs.find(p => p.pack_name === 'PREMIUM')     ?? null
-  const legendary = packs.find(p => p.pack_name === 'LEGENDARY')   ?? null
+  const standard  = packs.find(p => p.pack_name === 'STANDARD')  ?? null
+  const premium   = packs.find(p => p.pack_name === 'PREMIUM')   ?? null
+  const legendary = packs.find(p => p.pack_name === 'LEGENDARY') ?? null
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -24,9 +34,9 @@ export default async function MarketplacePage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <PackCard pack={standard}  tierKey="STANDARD"  />
-        <PackCard pack={premium}   tierKey="PREMIUM"   />
-        <PackCard pack={legendary} tierKey="LEGENDARY" />
+        <PackCard pack={standard}  tierKey="STANDARD"  isProUser={proUser} />
+        <PackCard pack={premium}   tierKey="PREMIUM"   isProUser={proUser} />
+        <PackCard pack={legendary} tierKey="LEGENDARY" isProUser={proUser} />
       </div>
     </div>
   )

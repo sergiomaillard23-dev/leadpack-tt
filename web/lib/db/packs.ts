@@ -12,6 +12,8 @@ export type Pack = {
   buyer_count: number
   max_buyers: number
   pack_size: number   // leads visible in this pack (5 or 20)
+  release_at: Date | null
+  pro_early_access_at: Date | null
 }
 
 /**
@@ -31,11 +33,15 @@ export async function getAvailablePacks(): Promise<Pack[]> {
       p.price_ttd,
       p.buyer_count,
       p.max_buyers,
-      p.pack_size
+      p.pack_size,
+      p.release_at,
+      p.pro_early_access_at
     FROM packs p
     JOIN lead_batches lb ON lb.id = p.lead_batch_id
     WHERE p.status = 'AVAILABLE'
       AND p.buyer_count < p.max_buyers
+      -- Include packs in Pro early-access window so the UI can show the lock/badge
+      AND (p.release_at IS NULL OR p.pro_early_access_at <= now())
     ORDER BY lb.created_at DESC, p.pack_label ASC
   `)
   return rows

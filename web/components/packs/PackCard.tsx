@@ -277,14 +277,53 @@ function PackFace({ def, pack, spotsLeft, footer, disabled = false }: PackFacePr
   )
 }
 
+// ── Pro early-access badge + countdown ────────────────────────────────────────
+
+function EarlyAccessBadge({ releaseAt, isProUser }: { releaseAt: Date; isProUser: boolean }) {
+  const [secsLeft, setSecsLeft] = useState(() =>
+    Math.max(0, Math.floor((new Date(releaseAt).getTime() - Date.now()) / 1000))
+  )
+
+  useEffect(() => {
+    if (secsLeft <= 0) return
+    const id = setInterval(() => setSecsLeft(s => Math.max(0, s - 1)), 1000)
+    return () => clearInterval(id)
+  }, [secsLeft])
+
+  const h = Math.floor(secsLeft / 3600)
+  const m = Math.floor((secsLeft % 3600) / 60)
+  const s = secsLeft % 60
+  const fmt = h > 0
+    ? `${h}h ${String(m).padStart(2,'0')}m`
+    : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+
+  if (isProUser) {
+    return (
+      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 w-fit">
+        <span className="text-amber-400 text-[9px]">★</span>
+        <span className="text-amber-400 text-[9px] font-bold uppercase tracking-wider">Pro Early Access</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-800/80 border border-gray-700 w-fit">
+      <span className="text-gray-500 text-[9px] font-semibold uppercase tracking-wider">
+        Opens in {secsLeft > 0 ? fmt : 'soon'}
+      </span>
+    </div>
+  )
+}
+
 // ── PackCard ───────────────────────────────────────────────────────────────────
 
 interface PackCardProps {
-  pack:    Pack | null
-  tierKey: TierKey
+  pack:      Pack | null
+  tierKey:   TierKey
+  isProUser: boolean
 }
 
-export function PackCard({ pack, tierKey }: PackCardProps) {
+export function PackCard({ pack, tierKey, isProUser }: PackCardProps) {
   const router = useRouter()
   const [state, setState]           = useState<CardState>({ phase: 'idle' })
   const [revealMode, setRevealMode] = useState<'none' | 'preview' | 'full'>('none')
@@ -390,6 +429,51 @@ export function PackCard({ pack, tierKey }: PackCardProps) {
     )
   }
 
+  // ── Legendary Pro gate ─────────────────────────────────────────────────────
+
+  if (tierKey === 'LEGENDARY' && !isProUser) {
+    const ghost = pack ?? {
+      id: '', pack_label: 'A' as const, pack_name: 'LEGENDARY' as const,
+      lead_batch_id: '', pack_type: 'EXCLUSIVE' as const, income_tier: 'LEGENDARY' as const,
+      status: 'AVAILABLE' as const, price_ttd: 360000, buyer_count: 0, max_buyers: 1,
+      pack_size: 20, release_at: null, pro_early_access_at: null,
+    }
+    const releaseAt    = pack?.release_at
+    const earlyAccessAt = pack?.pro_early_access_at
+    const inEarlyWindow =
+      releaseAt && earlyAccessAt &&
+      new Date(earlyAccessAt) <= new Date() &&
+      new Date(releaseAt) > new Date()
+
+    return (
+      <div className="relative">
+        <PackFace def={def} pack={ghost} spotsLeft={0} disabled footer={<div />} />
+        <div className="absolute inset-0 rounded-2xl flex flex-col items-center justify-end pb-5 px-5"
+          style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(1px)' }}>
+          <div className="flex flex-col items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
+              <svg className="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <p className="text-white text-sm font-bold">Legendary Pro Only</p>
+              <p className="text-gray-400 text-xs mt-0.5">Unlock with a Pro membership</p>
+            </div>
+            {inEarlyWindow && releaseAt && (
+              <EarlyAccessBadge releaseAt={releaseAt} isProUser={false} />
+            )}
+          </div>
+          <a href="/pro/upgrade"
+            className="w-full py-3 rounded-xl text-center font-black text-sm uppercase tracking-widest text-gray-950 transition-all duration-200 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300">
+            Upgrade to Pro
+          </a>
+        </div>
+      </div>
+    )
+  }
+
   // ── No pack available ──────────────────────────────────────────────────────
 
   if (!pack) {
@@ -397,6 +481,7 @@ export function PackCard({ pack, tierKey }: PackCardProps) {
       id: '', pack_label: 'A' as const, pack_name: tierKey as 'STANDARD' | 'PREMIUM' | 'LEGENDARY',
       lead_batch_id: '', pack_type: 'COMMUNITY' as const, income_tier: 'STANDARD' as const,
       status: 'AVAILABLE' as const, price_ttd: 0, buyer_count: 0, max_buyers: 3, pack_size: 0,
+      release_at: null, pro_early_access_at: null,
     }
     return (
       <PackFace
@@ -481,8 +566,20 @@ export function PackCard({ pack, tierKey }: PackCardProps) {
 
   // ── Idle / cracking / error ────────────────────────────────────────────────
 
+  const earlyAccessAt = pack?.pro_early_access_at
+  const releaseAt     = pack?.release_at
+  const showEarlyBadge =
+    tierKey === 'LEGENDARY' &&
+    isProUser &&
+    earlyAccessAt && releaseAt &&
+    new Date(earlyAccessAt) <= new Date() &&
+    new Date(releaseAt) > new Date()
+
   const ctaFooter = (
     <>
+      {showEarlyBadge && releaseAt && (
+        <EarlyAccessBadge releaseAt={releaseAt} isProUser={true} />
+      )}
       {state.phase === 'error' && (
         <p className="text-xs text-red-400 bg-red-950/40 border border-red-800/40 rounded-lg px-3 py-2">
           {state.message}
