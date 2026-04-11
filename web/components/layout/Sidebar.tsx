@@ -3,11 +3,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const NAV_LINKS = [
-  { href: '/dashboard',   label: 'Dashboard' },
-  { href: '/marketplace', label: 'Marketplace' },
-  { href: '/journal',     label: 'My Journal' },
-  { href: '/wallet',      label: 'Wallet' },
-  { href: '/pro',         label: 'Pro Tools ✦' },
+  { href: '/dashboard',        label: 'Dashboard' },
+  { href: '/marketplace',      label: 'Marketplace' },
+  { href: '/journal',          label: 'My Journal' },
+  { href: '/wallet',           label: 'Wallet' },
+  { href: '/pro/pipeline',     label: 'Pipeline ✦' },
+  { href: '/pro/analytics',    label: 'Analytics ✦' },
+  { href: '/pro/templates',    label: 'Templates ✦' },
 ]
 
 export function Sidebar() {
