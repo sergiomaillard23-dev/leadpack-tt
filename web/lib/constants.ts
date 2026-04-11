@@ -64,3 +64,12 @@ export const DROP_TIME_HOUR = 9  // Daily pack drop at 9:00 AM (Port of Spain ti
 export const KYC_ALLOWED_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png'] as const
 export const KYC_MAX_FILE_BYTES = 5 * 1024 * 1024 // 5MB
 export const KYC_DOC_FIELDS = ['INSURANCE_LICENSE', 'GOVERNMENT_ID_1', 'GOVERNMENT_ID_2'] as const
+
+// ── Legendary Pro subscription ────────────────────────────────────────────────
+export const LEGENDARY_PRO_ANNUAL_PRICE_CENTS = 500000 // TT$5,000.00/year
+
+export const DEFAULT_WHATSAPP_TEMPLATE_BODY =
+  'Good day {{firstName}}, my name is [Agent Name] from [Agency]. ' +
+  'I am reaching out regarding a financial planning consultation. ' +
+  'Would you be available for a brief call this week? ' +
+  'You may reply to this message or call me at [Agent Phone].'

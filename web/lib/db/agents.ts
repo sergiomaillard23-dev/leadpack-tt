@@ -2,16 +2,29 @@ import pool from '@/lib/db/client'
 
 export type Agent = {
   id: string
+  full_name: string
   email: string
   wallet_balance: number
   is_subscribed: boolean
   kyc_status: 'PENDING' | 'APPROVED' | 'REJECTED'
   kyc_rejected_reason: string | null
+  is_legendary_pro: boolean
+  pro_membership_expires_at: Date | null
+}
+
+/** Returns true only when the agent has an active, unexpired Pro membership. */
+export function isActivePro(agent: Agent): boolean {
+  return (
+    agent.is_legendary_pro &&
+    agent.pro_membership_expires_at !== null &&
+    new Date(agent.pro_membership_expires_at) > new Date()
+  )
 }
 
 export async function getAgentByEmail(email: string): Promise<Agent | null> {
   const { rows } = await pool.query<Agent>(
-    `SELECT id, email, wallet_balance, is_subscribed, kyc_status, kyc_rejected_reason
+    `SELECT id, full_name, email, wallet_balance, is_subscribed, kyc_status, kyc_rejected_reason,
+            is_legendary_pro, pro_membership_expires_at
      FROM agents WHERE email = $1`,
     [email]
   )
