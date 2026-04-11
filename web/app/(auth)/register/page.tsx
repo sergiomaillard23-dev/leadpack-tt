@@ -300,7 +300,7 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => { setStep(1); setError(null) }}
-              className="flex-none px-5 py-3 rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-600 font-semibold transition-colors text-sm"
+              className="flex-none px-5 py-3 rounded-xl btn-ghost font-semibold text-sm"
             >
               ← Back
             </button>
@@ -308,7 +308,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold disabled:opacity-50 transition-colors text-sm"
+            className="flex-1 py-3 rounded-xl btn-glow-indigo font-semibold disabled:opacity-50 text-sm"
           >
             {step === 1
               ? 'Continue →'

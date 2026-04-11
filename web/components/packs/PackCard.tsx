@@ -24,7 +24,7 @@ const TIER_DEFS = {
     bgMid:     '#021522',
     glowPos:   '50% 30%',
     glowSize:  '85% 60%',
-    btnClass:  'bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 text-white',
+    btnClass:  'btn-glow-cyan text-white',
     sparkles:  ['✦', '✦', '✧', '✦'],
     legendary: false,
   },
@@ -39,7 +39,7 @@ const TIER_DEFS = {
     bgMid:     '#110a2a',
     glowPos:   '50% 30%',
     glowSize:  '85% 60%',
-    btnClass:  'bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white',
+    btnClass:  'btn-glow-violet text-white',
     sparkles:  ['✦', '★', '✦', '★'],
     legendary: false,
   },
@@ -54,7 +54,7 @@ const TIER_DEFS = {
     bgMid:     '#1c0d00',
     glowPos:   '50% 35%',
     glowSize:  '95% 70%',
-    btnClass:  'bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 active:from-amber-600 text-black font-black',
+    btnClass:  'btn-glow-amber font-black',
     sparkles:  ['★', '✦', '★', '✦'],
     legendary: true,
   },
@@ -556,7 +556,7 @@ export function PackCard({ pack, tierKey, isProUser }: PackCardProps) {
         </div>
         <button
           onClick={() => setRevealMode('preview')}
-          className={`w-full py-3.5 rounded-xl font-black text-sm uppercase tracking-widest transition-all duration-200 ${def.btnClass}`}
+          className={`w-full py-3.5 rounded-xl font-black text-sm uppercase tracking-widest ${def.btnClass}`}
         >
           View Preview & Purchase
         </button>
@@ -588,7 +588,7 @@ export function PackCard({ pack, tierKey, isProUser }: PackCardProps) {
       <button
         onClick={handleCrack}
         disabled={state.phase === 'cracking'}
-        className={`w-full py-3.5 rounded-xl font-black text-sm uppercase tracking-widest transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg ${def.btnClass}`}
+        className={`w-full py-3.5 rounded-xl font-black text-sm uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${def.btnClass}`}
       >
         {state.phase === 'cracking' ? (
           <>

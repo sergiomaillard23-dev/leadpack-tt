@@ -95,11 +95,11 @@ export function AdminKycTable({ agents }: { agents: Agent[] }) {
               <div className="flex gap-2">
                 <button onClick={() => handleAction(agent.id, 'REJECT', reason)}
                   disabled={!reason.trim() || busy === agent.id}
-                  className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-sm font-medium transition-colors">
+                  className="px-4 py-2 rounded-xl btn-glow-red disabled:opacity-50 text-sm font-medium">
                   {busy === agent.id ? 'Saving…' : 'Confirm Reject'}
                 </button>
                 <button onClick={() => { setRejectTarget(null); setReason('') }}
-                  className="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium transition-colors">
+                  className="px-4 py-2 rounded-xl btn-ghost text-sm font-medium">
                   Cancel
                 </button>
               </div>
@@ -108,12 +108,12 @@ export function AdminKycTable({ agents }: { agents: Agent[] }) {
             <div className="flex gap-2">
               <button onClick={() => handleAction(agent.id, 'APPROVE')}
                 disabled={busy === agent.id}
-                className="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white text-sm font-semibold transition-colors">
+                className="px-4 py-2 rounded-xl btn-glow-green disabled:opacity-50 text-sm font-semibold">
                 {busy === agent.id ? 'Saving…' : 'Approve'}
               </button>
               <button onClick={() => setRejectTarget(agent.id)}
                 disabled={busy === agent.id}
-                className="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white text-sm font-semibold transition-colors">
+                className="px-4 py-2 rounded-xl btn-ghost disabled:opacity-50 text-sm font-semibold">
                 Reject
               </button>
             </div>

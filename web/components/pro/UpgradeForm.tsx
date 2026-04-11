@@ -88,7 +88,7 @@ export function UpgradeForm({ defaultName, defaultEmail, kycApproved, kycDocs }:
           </div>
           <button
             onClick={() => { if (fullName.trim() && email.trim()) setStep(2) }}
-            className="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-colors mt-2">
+            className="w-full py-3 rounded-xl btn-glow-indigo font-semibold text-sm mt-2">
             Continue
           </button>
         </div>
@@ -122,13 +122,13 @@ export function UpgradeForm({ defaultName, defaultEmail, kycApproved, kycDocs }:
           )}
           <div className="flex gap-3 mt-2">
             <button onClick={() => setStep(1)}
-              className="flex-1 py-3 rounded-lg border border-gray-700 text-gray-300 text-sm hover:border-gray-500 transition-colors">
+              className="flex-1 py-3 rounded-xl btn-ghost text-sm">
               Back
             </button>
             <button
               onClick={() => setStep(3)}
               disabled={!kycApproved}
-              className="flex-1 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-semibold text-sm transition-colors">
+              className="flex-1 py-3 rounded-xl btn-glow-indigo disabled:opacity-40 font-semibold text-sm">
               Continue
             </button>
           </div>
@@ -156,12 +156,12 @@ export function UpgradeForm({ defaultName, defaultEmail, kycApproved, kycDocs }:
           </div>
           <div className="flex gap-3 mt-2">
             <button onClick={() => setStep(2)}
-              className="flex-1 py-3 rounded-lg border border-gray-700 text-gray-300 text-sm hover:border-gray-500 transition-colors">
+              className="flex-1 py-3 rounded-xl btn-ghost text-sm">
               Back
             </button>
             <button
               onClick={() => { if (line1.trim() && city.trim()) setStep(4) }}
-              className="flex-1 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-colors">
+              className="flex-1 py-3 rounded-xl btn-glow-indigo font-semibold text-sm">
               Continue
             </button>
           </div>
@@ -199,11 +199,11 @@ export function UpgradeForm({ defaultName, defaultEmail, kycApproved, kycDocs }:
 
           <div className="flex gap-3">
             <button onClick={() => setStep(3)} disabled={loading}
-              className="flex-1 py-3 rounded-lg border border-gray-700 text-gray-300 text-sm hover:border-gray-500 transition-colors disabled:opacity-40">
+              className="flex-1 py-3 rounded-xl btn-ghost text-sm disabled:opacity-40">
               Back
             </button>
             <button onClick={handlePay} disabled={loading}
-              className="flex-1 py-3 rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-gray-950 font-bold text-sm transition-colors">
+              className="flex-1 py-3 rounded-xl btn-glow-amber disabled:opacity-50 font-bold text-sm">
               {loading ? 'Redirecting\u2026' : 'Pay with WiPay'}
             </button>
           </div>

@@ -58,7 +58,7 @@ export default function LoginPage() {
   const inputClass =
     'w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors'
   const btnClass =
-    'w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold disabled:opacity-50 transition-colors'
+    'w-full py-3 rounded-xl btn-glow-indigo font-semibold disabled:opacity-50'
 
   return (
     <>

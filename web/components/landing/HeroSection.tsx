@@ -137,7 +137,7 @@ export function HeroSection() {
             <div className="anim-4 flex flex-wrap gap-3">
               <Link
                 href="/register"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition-all hover:scale-105 hover:shadow-lg hover:shadow-indigo-500/25"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl btn-glow-indigo font-semibold"
               >
                 Start Closing Deals
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -146,7 +146,7 @@ export function HeroSection() {
               </Link>
               <Link
                 href="/login"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl border border-white/10 text-[#8892a4] hover:text-white hover:border-white/20 font-semibold transition-all"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl btn-ghost font-semibold"
               >
                 I Have an Account
               </Link>
