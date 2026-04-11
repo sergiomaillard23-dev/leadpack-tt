@@ -18,8 +18,9 @@ export function middleware(request: NextRequest) {
   const isLandingPage = pathname === '/'
   const isPublicAsset = pathname.startsWith('/_next') ||
                         pathname.startsWith('/favicon')
+  const isPublicProPage = pathname === '/pro/upgrade'
 
-  if (isAuthRoute || isLandingPage || isPublicAsset) {
+  if (isAuthRoute || isLandingPage || isPublicAsset || isPublicProPage) {
     return NextResponse.next()
   }
 
