@@ -3,13 +3,15 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { formatCurrency } from '@/lib/utils'
+import { ProBadge } from '@/components/pro/ProBadge'
 
 interface HeaderProps {
   agentEmail: string
   walletBalanceCents: number
+  isPro?: boolean
 }
 
-export function Header({ agentEmail, walletBalanceCents }: HeaderProps) {
+export function Header({ agentEmail, walletBalanceCents, isPro }: HeaderProps) {
   const router = useRouter()
   const supabase = createClient()
 
@@ -32,7 +34,10 @@ export function Header({ agentEmail, walletBalanceCents }: HeaderProps) {
             {formatCurrency(walletBalanceCents)}
           </span>
         </div>
-        <span className="text-sm text-gray-400 hidden sm:block">{agentEmail}</span>
+        <div className="hidden sm:flex items-center gap-2">
+          {isPro && <ProBadge size="sm" />}
+          <span className="text-sm text-gray-400">{agentEmail}</span>
+        </div>
         <button
           onClick={handleLogout}
           className="text-sm text-gray-400 hover:text-white transition-colors"

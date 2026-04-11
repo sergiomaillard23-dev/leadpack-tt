@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { getAgentByEmail } from '@/lib/db/agents'
+import { getAgentByEmail, isActivePro } from '@/lib/db/agents'
 import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
 
@@ -28,6 +28,7 @@ export default async function DashboardLayout({
       <Header
         agentEmail={user.email ?? ''}
         walletBalanceCents={agent?.wallet_balance ?? 0}
+        isPro={isActivePro(agent)}
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
