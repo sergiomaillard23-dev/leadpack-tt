@@ -3,6 +3,7 @@ import { Navbar }       from '@/components/landing/Navbar'
 import { HeroSection }  from '@/components/landing/HeroSection'
 import { HowItWorks }   from '@/components/landing/HowItWorks'
 import { PricingTiers } from '@/components/landing/PricingTiers'
+import { ProSection }   from '@/components/landing/ProSection'
 import { Testimonials } from '@/components/landing/Testimonials'
 import { FAQ }          from '@/components/landing/FAQ'
 import { FinalCTA }     from '@/components/landing/FinalCTA'
@@ -39,6 +40,7 @@ export default function LandingPage() {
       <HeroSection />
       <HowItWorks />
       <PricingTiers />
+      <ProSection />
       <Testimonials />
       <FAQ />
       <FinalCTA />

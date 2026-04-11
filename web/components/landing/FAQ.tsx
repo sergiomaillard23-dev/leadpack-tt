@@ -26,6 +26,18 @@ const QUESTIONS = [
     q: 'How do I contact leads after purchase?',
     a: 'Purchased leads appear in your Trader Journal with full contact details — name, phone, email, and parish. WhatsApp outreach automation is available for Pro subscribers.',
   },
+  {
+    q: 'What is Legendary Pro?',
+    a: 'Legendary Pro is LeadPack T&T\'s annual membership for serious agents. At TT$5,000/year it unlocks the full CRM suite: pipeline kanban board, analytics dashboard, WhatsApp outreach templates, CSV export, auto-subscription pack delivery, and 5 free pack credits every month.',
+  },
+  {
+    q: 'What tools do Pro members get?',
+    a: 'Pro members get: a pipeline kanban board to track every lead from first contact to closed, an analytics dashboard showing spend vs. commission ROI and OVR distribution, WhatsApp message templates with variable interpolation ({{firstName}}, {{lastName}}, {{policyInterest}}), CSV export of their full lead book, and auto-subscription delivery so packs arrive on a schedule without manual purchases.',
+  },
+  {
+    q: 'Can I cancel my Pro subscription?',
+    a: 'Pro membership is billed annually at TT$5,000. Your membership stays active until the end of your current year. Contact support to discuss early cancellation.',
+  },
 ]
 
 export function FAQ() {

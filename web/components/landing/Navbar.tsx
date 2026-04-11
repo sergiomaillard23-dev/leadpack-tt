@@ -15,6 +15,7 @@ export function Navbar() {
   const navLinks = [
     { label: 'How It Works', href: '#how-it-works' },
     { label: 'Pricing',      href: '#pricing'       },
+    { label: 'Pro',          href: '#pro'            },
     { label: 'FAQ',          href: '#faq'            },
   ]
 
@@ -61,6 +62,19 @@ export function Navbar() {
           >
             Log In
           </Link>
+          <a
+            href="#pro"
+            className="text-sm font-bold px-4 py-2 rounded-lg border transition-colors"
+            style={{
+              color: '#fbbf24',
+              borderColor: 'rgba(245,158,11,0.4)',
+              background: 'rgba(245,158,11,0.05)',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(245,158,11,0.12)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(245,158,11,0.05)')}
+          >
+            Go Pro ✦
+          </a>
           <Link
             href="/register"
             className="text-sm font-semibold text-white px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition-colors"
@@ -107,6 +121,18 @@ export function Navbar() {
             >
               Log In
             </Link>
+            <a
+              href="#pro"
+              onClick={() => setMobileOpen(false)}
+              className="text-sm font-bold text-center py-2.5 rounded-lg border transition-colors"
+              style={{
+                color: '#fbbf24',
+                borderColor: 'rgba(245,158,11,0.4)',
+                background: 'rgba(245,158,11,0.05)',
+              }}
+            >
+              Go Pro ✦
+            </a>
             <Link
               href="/register"
               className="text-sm font-semibold text-white text-center py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition-colors"
