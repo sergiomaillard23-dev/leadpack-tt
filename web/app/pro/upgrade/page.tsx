@@ -27,8 +27,8 @@ const BENEFITS = [
   },
   {
     icon: '◆',
-    label: '5 Free Pack Credits Every Month',
-    detail: 'TT$5 in credits hit your wallet on your billing date, every single cycle. That is 60 free credits over the course of the year.',
+    label: '150 Free Pack Credits Every Month',
+    detail: 'TT$150 in credits hit your wallet on your billing date, every single cycle — enough to crack a Standard pack on us.',
   },
   {
     icon: '⤓',
@@ -133,7 +133,7 @@ export default async function UpgradePage() {
           </h1>
 
           <p className="text-lg text-[#8892a4] leading-relaxed max-w-2xl mx-auto">
-            While other agents are juggling spreadsheets and cold-calling blind,
+            While other agents are relying on orphans and cold calling blind . . .
             you will be running a full CRM — pipeline, analytics, WhatsApp outreach,
             and priority access to the highest-value leads in Trinidad &amp; Tobago.
           </p>

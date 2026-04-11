@@ -18,8 +18,8 @@ const BENEFITS = [
   },
   {
     icon: '◆',
-    label: '5 free pack credits every month',
-    detail: 'TT$5 in credits granted on your billing date, every cycle.',
+    label: '150 free pack credits every month',
+    detail: 'TT$150 in credits granted on your billing date, every cycle — enough to crack a Standard pack on us.',
   },
   {
     icon: '★',

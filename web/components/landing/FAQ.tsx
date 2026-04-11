@@ -28,7 +28,7 @@ const QUESTIONS = [
   },
   {
     q: 'What is Legendary Pro?',
-    a: 'Legendary Pro is LeadPack T&T\'s annual membership for serious agents. At TT$5,000/year it unlocks the full CRM suite: pipeline kanban board, analytics dashboard, WhatsApp outreach templates, CSV export, auto-subscription pack delivery, and 5 free pack credits every month.',
+    a: 'Legendary Pro is LeadPack T&T\'s annual membership for serious agents. At TT$5,000/year it unlocks the full CRM suite: pipeline kanban board, analytics dashboard, WhatsApp outreach templates, CSV export, auto-subscription pack delivery, and 150 free pack credits every month.',
   },
   {
     q: 'What tools do Pro members get?',
