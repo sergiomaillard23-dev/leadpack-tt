@@ -62,8 +62,8 @@ export function Navbar() {
           >
             Log In
           </Link>
-          <a
-            href="#pro"
+          <Link
+            href="/pro/upgrade"
             className="text-sm font-bold px-4 py-2 rounded-lg border transition-colors"
             style={{
               color: '#fbbf24',
@@ -74,7 +74,7 @@ export function Navbar() {
             onMouseLeave={e => (e.currentTarget.style.background = 'rgba(245,158,11,0.05)')}
           >
             Go Pro ✦
-          </a>
+          </Link>
           <Link
             href="/register"
             className="text-sm font-semibold text-white px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition-colors"
@@ -121,8 +121,8 @@ export function Navbar() {
             >
               Log In
             </Link>
-            <a
-              href="#pro"
+            <Link
+              href="/pro/upgrade"
               onClick={() => setMobileOpen(false)}
               className="text-sm font-bold text-center py-2.5 rounded-lg border transition-colors"
               style={{
@@ -132,7 +132,7 @@ export function Navbar() {
               }}
             >
               Go Pro ✦
-            </a>
+            </Link>
             <Link
               href="/register"
               className="text-sm font-semibold text-white text-center py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition-colors"
