@@ -79,7 +79,7 @@ export function Navbar() {
             href="/register"
             className="text-sm font-semibold text-white px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition-colors"
           >
-            Get Started
+            Sign Up For Free
           </Link>
         </div>
 
@@ -137,7 +137,7 @@ export function Navbar() {
               href="/register"
               className="text-sm font-semibold text-white text-center py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 transition-colors"
             >
-              Get Started
+              Sign Up For Free
             </Link>
           </div>
         </div>

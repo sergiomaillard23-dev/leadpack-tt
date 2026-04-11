@@ -119,25 +119,8 @@ export function ProSection() {
               ))}
             </ul>
 
-            {/* Price + CTA */}
+            {/* CTA */}
             <div className="mt-2 flex flex-col gap-3">
-              <div className="flex items-baseline gap-2">
-                <span
-                  className="text-4xl font-extrabold"
-                  style={{
-                    fontFamily: 'var(--font-display)',
-                    background: 'linear-gradient(90deg, #fbbf24 0%, #fde68a 50%, #f59e0b 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  TT$5,000
-                </span>
-                <span className="text-[#6b7a9e] text-sm">/ year</span>
-                <span className="text-xs text-[#4a5568] ml-1">(TT$417/mo)</span>
-              </div>
-
               <Link
                 href="/pro/upgrade"
                 className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm transition-all hover:scale-105"
@@ -149,7 +132,7 @@ export function ProSection() {
                   border: '1px solid rgba(245,158,11,0.4)',
                 }}
               >
-                Upgrade to Pro
+                See Pro Membership Details
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
