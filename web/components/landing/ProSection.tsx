@@ -59,7 +59,7 @@ export function ProSection() {
         <div className="grid lg:grid-cols-2 gap-16 items-center">
 
           {/* ── Left: copy ── */}
-          <div className="reveal flex flex-col gap-6">
+          <div className="anim-1 flex flex-col gap-6">
 
             {/* Overline badge */}
             <div>
@@ -165,7 +165,7 @@ export function ProSection() {
           </div>
 
           {/* ── Right: mock dashboard ── */}
-          <div className="reveal flex flex-col gap-4">
+          <div className="anim-2 flex flex-col gap-4">
             {/* Mock header bar */}
             <div
               className="rounded-2xl border p-5"
