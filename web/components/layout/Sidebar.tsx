@@ -7,9 +7,10 @@ const NAV_LINKS = [
   { href: '/marketplace',      label: 'Marketplace' },
   { href: '/journal',          label: 'My Journal' },
   { href: '/wallet',           label: 'Wallet' },
-  { href: '/pro/pipeline',     label: 'Pipeline ✦' },
-  { href: '/pro/analytics',    label: 'Analytics ✦' },
-  { href: '/pro/templates',    label: 'Templates ✦' },
+  { href: '/pro/pipeline',      label: 'Pipeline ✦' },
+  { href: '/pro/analytics',     label: 'Analytics ✦' },
+  { href: '/pro/templates',     label: 'Templates ✦' },
+  { href: '/pro/subscriptions', label: 'Subscriptions ✦' },
 ]
 
 export function Sidebar() {
