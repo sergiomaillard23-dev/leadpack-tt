@@ -1,6 +1,6 @@
 import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { getAgentByEmail } from '@/lib/db/agents'
+import { getAgentByEmail, isActivePro } from '@/lib/db/agents'
 import { getLeadsForPack, getPurchasedPacks } from '@/lib/db/journal'
 import WhatsAppButton from '@/components/journal/WhatsAppButton'
 import Link from 'next/link'
@@ -77,7 +77,7 @@ export default async function PackLeadsPage({ params }: { params: { packId: stri
                   </td>
                   <td className="px-5 py-3 text-gray-500">{lead.source ?? '—'}</td>
                   <td className="px-5 py-3 text-right">
-                    <WhatsAppButton leadId={lead.id} isPro={agent.is_subscribed} />
+                    <WhatsAppButton phone={lead.phone} fullName={lead.full_name} isPro={isActivePro(agent)} />
                   </td>
                 </tr>
               ))}

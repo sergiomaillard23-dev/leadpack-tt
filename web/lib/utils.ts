@@ -43,3 +43,11 @@ export function normalizePhone(raw: string): string | null {
 
   return null
 }
+
+/**
+ * Converts a canonical T&T phone (1-868-XXX-XXXX) to the digits-only format
+ * required by wa.me links: 18681234567
+ */
+export function phoneToWaMe(canonical: string): string {
+  return canonical.replace(/\D/g, '')
+}
