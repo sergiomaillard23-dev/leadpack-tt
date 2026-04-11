@@ -50,6 +50,7 @@ export default function RegisterPage() {
   const [phone, setPhone]       = useState('')
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
+  const [company, setCompany]   = useState('')
   const [error, setError]       = useState<string | null>(null)
   const [loading, setLoading]   = useState(false)
   const [sent, setSent]         = useState(false)
@@ -87,6 +88,7 @@ export default function RegisterPage() {
       formData.append('phone',    phone)
       formData.append('email',    email)
       formData.append('password', password)
+      formData.append('company',  company)
 
       // Collect files from the current form's file inputs
       const form = formRef.current!
@@ -212,6 +214,22 @@ export default function RegisterPage() {
               onChange={e => setPassword(e.target.value)}
               minLength={8} required className={inputClass}
             />
+            <div>
+              <select
+                value={company}
+                onChange={e => setCompany(e.target.value)}
+                required
+                className={`${inputClass} appearance-none`}
+              >
+                <option value="" disabled>Select your company / employer</option>
+                <option value="Guardian Life">Guardian Life</option>
+                <option value="Sagicor">Sagicor</option>
+                <option value="Pan American Life Insurance Co. TT">Pan American Life Insurance Co. TT</option>
+                <option value="TATIL">TATIL</option>
+                <option value="Broker">Broker (Independent)</option>
+              </select>
+              <p className="text-xs text-gray-600 mt-1 ml-1">The insurance company or brokerage you represent</p>
+            </div>
           </>
         )}
 

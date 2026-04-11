@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
   const phone    = (formData.get('phone')    as string | null)?.trim()
   const email    = (formData.get('email')    as string | null)?.trim().toLowerCase()
   const password = formData.get('password')  as string | null
+  const company  = (formData.get('company')  as string | null)?.trim() || null
 
   if (!name || name.length < 2) {
     return NextResponse.json({ success: false, error: 'Full name is required' }, { status: 400 })
@@ -107,7 +108,7 @@ export async function POST(req: NextRequest) {
   // ── Provision agent row, upload docs, set PENDING ─────────────────────────
   // All storage uploads happen before any DB writes (fail-fast).
   try {
-    await provisionAgent(user.id, name, normalizedPhone, email)
+    await provisionAgent(user.id, name, normalizedPhone, email, company)
 
     const uploads: Array<{ field: typeof KYC_DOC_FIELDS[number]; path: string }> = []
     for (const field of KYC_DOC_FIELDS) {

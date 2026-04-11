@@ -10,6 +10,7 @@ export type Agent = {
   kyc_rejected_reason: string | null
   is_legendary_pro: boolean
   pro_membership_expires_at: Date | null
+  company: string | null
 }
 
 /** Returns true only when the agent has an active, unexpired Pro membership. */
@@ -24,7 +25,7 @@ export function isActivePro(agent: Agent): boolean {
 export async function getAgentByEmail(email: string): Promise<Agent | null> {
   const { rows } = await pool.query<Agent>(
     `SELECT id, full_name, email, wallet_balance, is_subscribed, kyc_status, kyc_rejected_reason,
-            is_legendary_pro, pro_membership_expires_at
+            is_legendary_pro, pro_membership_expires_at, company
      FROM agents WHERE email = $1`,
     [email]
   )
@@ -65,12 +66,13 @@ export async function provisionAgent(
   id: string,
   fullName: string,
   phone: string,
-  email: string
+  email: string,
+  company: string | null = null
 ): Promise<void> {
   await pool.query(
-    `INSERT INTO agents (id, full_name, phone, email, kyc_status)
-     VALUES ($1, $2, $3, $4, 'PENDING')
+    `INSERT INTO agents (id, full_name, phone, email, company, kyc_status)
+     VALUES ($1, $2, $3, $4, $5, 'PENDING')
      ON CONFLICT (email) DO NOTHING`,
-    [id, fullName, phone, email]
+    [id, fullName, phone, email, company]
   )
 }
