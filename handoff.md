@@ -1,7 +1,7 @@
 # LeadPack T&T — Handoff Document
 **Last updated:** 2026-04-10  
 **Branch:** `master` (deployed to Vercel)  
-**Status:** ✅ Full marketplace flow working — crack, preview reveal, purchase, full lead reveal, wallet, journal all live. Landing page updated. Vercel deployed and stable.
+**Status:** ✅ Stage 6 complete — Legendary Pro tier, KYC AI verification, WiPay Pro upgrade flow, pipeline kanban, WhatsApp wa.me connector with templates all live.
 
 ---
 
@@ -20,8 +20,9 @@ Gamified insurance lead marketplace for T&T agents. Agents buy packs of 20 leads
 | Database | PostgreSQL local dev / Supabase cloud | ✅ Migrations applied |
 | Cache/Timers | Upstash Redis | ❌ Not started (using DB-based timers for now) |
 | Background Jobs | n8n (local) | ✅ Lead intake pipeline live |
-| Payments | WiPay / FAC | ❌ Not started |
-| Messaging | WhatsApp Cloud API | ❌ Not started |
+| Payments | WiPay / FAC | ✅ Mock mode live (Pro upgrade flow); live stub ready |
+| Messaging | WhatsApp | ✅ wa.me connector (no API — opens agent's own WhatsApp) |
+| AI | Claude Haiku (Anthropic) | ✅ KYC document auto-verification |
 | Deployment | Vercel (frontend) | ✅ Live on Vercel |
 
 ---
@@ -33,98 +34,136 @@ leadpack-tt/
 ├── CLAUDE.md                          ← Full product spec — read before touching anything
 ├── handoff.md                         ← This file
 ├── migrations/
-│   ├── 001_core_schema.sql            ← All core tables, enums, triggers, indexes
-│   ├── 002_add_lead_batches.sql       ← lead_batches table, lead_batch_id FK on leads+packs
-│   ├── 003_pack_fields.sql            ← price_ttd, buyer_count, max_buyers on packs
-│   ├── 004_pack_timers.sql            ← pack_timers table (superseded by 007)
-│   ├── 005_drop_broken_trigger.sql    ← Removes a trigger that caused insert failures
-│   ├── 006_agent_kyc.sql              ← kyc_status on agents, kyc_documents table
-│   ├── 007_add_pack_cracks_and_wallet.sql  ← pack_cracks table + 3 DB functions + payment_type
-│   └── 008_rename_agents_name_to_full_name.sql  ← agents.name → agents.full_name
+│   ├── 001_core_schema.sql
+│   ├── 002_add_lead_batches.sql
+│   ├── 003_pack_fields.sql
+│   ├── 004_pack_timers.sql
+│   ├── 005_drop_broken_trigger.sql
+│   ├── 006_agent_kyc.sql
+│   ├── 007_add_pack_cracks_and_wallet.sql
+│   ├── 008_rename_agents_name_to_full_name.sql
+│   ├── 009_pack_name_constraint.sql
+│   ├── 010_lead_stats_ovr.sql
+│   ├── 011_ai_kyc_fields.sql          ← kyc_ai_verdict, kyc_ai_reason on agents
+│   └── 012_legendary_pro.sql          ← is_legendary_pro, pro_membership_expires_at, pro_applications,
+│                                         whatsapp_templates, lead_notes, pack_subscriptions,
+│                                         pipeline_status on leads, release_at/pro_early_access_at on packs
 └── web/
     ├── app/
     │   ├── (auth)/
-    │   │   ├── layout.tsx             ← Centered card shell, no sidebar
-    │   │   ├── login/page.tsx         ← Email/password + magic link tabs
+    │   │   ├── layout.tsx
+    │   │   ├── login/page.tsx
     │   │   └── register/page.tsx      ← Name, phone (validated), email, password
     │   ├── (dashboard)/
     │   │   ├── layout.tsx             ← KYC gate + Header + Sidebar
-    │   │   ├── marketplace/page.tsx   ← Pack grid — real data from DB
-    │   │   ├── wallet/page.tsx        ← Balance + transaction history
+    │   │   ├── marketplace/page.tsx   ← Pack grid; Legendary packs locked for non-Pro
+    │   │   ├── wallet/page.tsx
     │   │   ├── journal/
-    │   │   │   ├── page.tsx           ← Stats + purchased packs list
-    │   │   │   └── [packId]/page.tsx  ← Full lead table for a pack (ownership-gated)
+    │   │   │   ├── page.tsx
+    │   │   │   └── [packId]/page.tsx  ← Lead table with WhatsApp button (Pro-gated)
     │   │   └── error.tsx
+    │   ├── (pro)/                     ← Route group — layout redirects non-Pro to /pro/upgrade
+    │   │   ├── layout.tsx             ← Pro gate (server component DB check)
+    │   │   └── pro/
+    │   │       ├── pipeline/page.tsx  ← Kanban board (NEW/CONTACTED/QUOTED/CLOSED_WON/CLOSED_LOST)
+    │   │       └── templates/page.tsx ← WhatsApp template CRUD
+    │   ├── pro/
+    │   │   └── upgrade/
+    │   │       ├── page.tsx           ← 4-step upgrade form (outside (pro) group — accessible to all)
+    │   │       └── success/page.tsx   ← Post-payment success screen
     │   ├── admin/
-    │   │   └── kyc/page.tsx           ← Admin reviews PENDING agents, approve/reject
+    │   │   └── kyc/page.tsx
     │   ├── onboarding/
-    │   │   └── kyc/page.tsx           ← Upload form for PENDING agents
-    │   ├── api/
-    │   │   ├── packs/
-    │   │   │   ├── crack/route.ts     ← POST: crack pack, start 5-min window
-    │   │   │   ├── purchase/route.ts  ← POST: buy pack, debit wallet
-    │   │   │   └── [id]/timer/route.ts ← GET: remaining seconds on crack window
-    │   │   ├── kyc/
-    │   │   │   └── submit/route.ts    ← POST: upload 3 KYC docs to Supabase Storage
-    │   │   └── admin/
-    │   │       └── kyc/[agentId]/route.ts  ← PATCH: approve or reject agent
-    │   ├── auth/callback/route.ts     ← Magic link exchange → provisions agents row
-    │   ├── layout.tsx                 ← Dark theme root, Inter font
-    │   ├── globals.css
-    │   └── page.tsx                   ← Redirects / → /marketplace
+    │   │   └── kyc/page.tsx
+    │   └── api/
+    │       ├── packs/
+    │       │   ├── crack/route.ts
+    │       │   ├── purchase/route.ts
+    │       │   └── [id]/timer/route.ts
+    │       ├── kyc/
+    │       │   └── submit/route.ts    ← Uploads docs + calls Claude Haiku vision → auto APPROVED/REJECTED/PENDING
+    │       ├── pro/
+    │       │   ├── apply/route.ts     ← POST: create pro_application + WiPay checkout session
+    │       │   ├── leads/
+    │       │   │   └── [leadId]/
+    │       │   │       ├── pipeline/route.ts  ← PATCH: update pipeline_status
+    │       │   │       └── notes/route.ts     ← GET + POST: lead notes per agent
+    │       │   └── templates/
+    │       │       ├── route.ts       ← GET list + POST create
+    │       │       └── [id]/route.ts  ← PATCH (update / setDefault) + DELETE
+    │       ├── payments/
+    │       │   ├── wipay/callback/route.ts    ← POST: WiPay webhook → activateProApplication()
+    │       │   └── mock-success/route.ts      ← GET: dev-only instant activation + redirect
+    │       ├── admin/
+    │       │   └── kyc/[agentId]/route.ts
+    │       └── auth/callback/route.ts
     ├── components/
     │   ├── layout/
-    │   │   ├── Header.tsx             ← Wallet balance badge, agent email, logout
-    │   │   └── Sidebar.tsx            ← Marketplace / Journal / Wallet / Pro Tools nav
+    │   │   ├── Header.tsx
+    │   │   └── Sidebar.tsx            ← Now includes Pipeline + Templates links for Pro
     │   ├── packs/
-    │   │   ├── PackCard.tsx           ← Label, type badge, price, crack/purchase CTA, timer ring
-    │   │   └── PackReveal.tsx         ← Two-mode modal: preview (1 card + purchase CTA) and full (all leads, flip/reveal-all)
+    │   │   ├── PackCard.tsx           ← Legendary Pro lock overlay + early-access countdown
+    │   │   └── PackReveal.tsx
     │   ├── leads/
-    │   │   ├── LeadCard.tsx           ← FIFA-style portrait card, tier gradients, 6 StatBars, unrevealed "?" state
-    │   │   └── StatBar.tsx            ← Labeled fill bar (green ≥90, yellow ≥70, red <70)
+    │   │   ├── LeadCard.tsx
+    │   │   └── StatBar.tsx
     │   ├── dashboard/
-    │   │   ├── MarketTicker.tsx       ← CSS marquee ticker, LIVE dot
-    │   │   ├── NextDropTimer.tsx      ← 9AM AST countdown
-    │   │   ├── WalletCard.tsx         ← Slot-machine balance roll, Quick Add toast
-    │   │   ├── InventoryCard.tsx      ← Mock pack inventory
-    │   │   └── KYCBanner.tsx          ← Amber warning with progress bar
+    │   │   ├── MarketTicker.tsx
+    │   │   ├── NextDropTimer.tsx
+    │   │   ├── WalletCard.tsx
+    │   │   ├── InventoryCard.tsx
+    │   │   └── KYCBanner.tsx
     │   ├── marketplace/
-    │   │   └── FreemiumHeatMap.tsx    ← Parish heatmap — blurred for free tier, live for Pro
+    │   │   └── FreemiumHeatMap.tsx
+    │   ├── journal/
+    │   │   └── WhatsAppButton.tsx     ← Opens WhatsAppModal for Pro; "WA ↑Pro" for free
     │   ├── pro/
-    │   │   └── ScoutFilters.tsx       ← OVR/income range sliders, locked for non-Pro
+    │   │   ├── ScoutFilters.tsx
+    │   │   ├── UpgradeForm.tsx        ← 4-step client form (account → KYC check → billing → review)
+    │   │   ├── PipelineBoard.tsx      ← Kanban with dnd-kit drag-and-drop, optimistic updates
+    │   │   ├── LeadSidePanel.tsx      ← Slide-over: lead details + notes thread + WhatsApp button
+    │   │   ├── TemplatesManager.tsx   ← Template list with inline edit/delete/set-default
+    │   │   └── WhatsAppModal.tsx      ← Template picker → variable interpolation → wa.me link
     │   └── kyc/
-    │       └── KycUploadForm.tsx      ← File inputs, submit, idle/submitting/submitted states
+    │       └── KycUploadForm.tsx      ← Shows AI verdict (approved/pending/rejected + reason + retry)
     ├── lib/
-    │   ├── constants.ts               ← All named constants (prices, timers, OVR thresholds, etc.)
-    │   ├── utils.ts                   ← formatCurrency(cents) → "TT$X,XXX.XX"
+    │   ├── constants.ts               ← Includes LEGENDARY_PRO_ANNUAL_PRICE_CENTS, DEFAULT_WHATSAPP_TEMPLATE_BODY
+    │   ├── utils.ts                   ← formatCurrency() + phoneToWaMe() (strips non-digits)
+    │   ├── ai/
+    │   │   └── kycVerify.ts           ← verifyKycDocuments() → KycVerdict via Claude Haiku vision
+    │   ├── payments/
+    │   │   └── wipay.ts               ← WiPayService interface; MockWiPayService (dev); LiveWiPayService (stub)
     │   ├── types/
-    │   │   └── leads.ts               ← LeadTier, LeadStats, ScoredLead interfaces
+    │   │   └── leads.ts
     │   ├── utils/
-    │   │   └── scoring.ts             ← OVR engine: calcFRH/INT/LOC/FIN/STA/FIT, calculateLeadOVR, getLeadTier, scoreLead
+    │   │   └── scoring.ts
     │   ├── mock/
-    │   │   └── leads.ts               ← Client-safe mock ScoredLeads (no pg dependency) — used by PackCard/PackReveal
+    │   │   └── leads.ts
     │   ├── supabase/
-    │   │   ├── client.ts              ← createClient() for browser components
-    │   │   ├── server.ts              ← createClient() for RSC + route handlers
-    │   │   └── storage.ts             ← Service-role upload + signed URL helpers
+    │   │   ├── client.ts
+    │   │   ├── server.ts
+    │   │   └── storage.ts
     │   └── db/
-    │       ├── client.ts              ← pg Pool → Supabase transaction pooler (port 6543)
-    │       ├── agents.ts              ← getAgentByEmail(), provisionAgent()
-    │       ├── packs.ts               ← getAvailablePacks() — real DB query
-    │       ├── cracks.ts              ← crackPack(), getActiveCrack(), markPurchased(), etc.
-    │       ├── wallet.ts              ← getTransactions()
-    │       ├── journal.ts             ← getPurchasedPacks(), getLeadsForPack(), getJournalStats()
-    │       ├── kyc.ts                 ← upsertDocument(), getDocuments(), setKycStatus(), getPendingAgents()
-    │       └── timers.ts              ← Legacy (pack_timers based) — superseded by cracks.ts
-    ├── middleware.ts                  ← Protects all non-auth routes; admin gate via ADMIN_EMAILS
+    │       ├── client.ts
+    │       ├── agents.ts              ← Agent type includes is_legendary_pro, pro_membership_expires_at; isActivePro()
+    │       ├── packs.ts               ← Pack type includes release_at, pro_early_access_at; Legendary gate in WHERE
+    │       ├── cracks.ts
+    │       ├── wallet.ts
+    │       ├── journal.ts
+    │       ├── kyc.ts
+    │       ├── timers.ts              ← Legacy
+    │       ├── pro.ts                 ← upsertProApplication(), activateProApplication(), getProApplication()
+    │       ├── pipeline.ts            ← getPipelineLeads(), updatePipelineStatus(), getLeadNotes(), addLeadNote()
+    │       └── templates.ts           ← getTemplates(), createTemplate(), updateTemplate(), deleteTemplate(), setDefaultTemplate()
+    ├── middleware.ts
     ├── tests/
     │   ├── setup.ts
     │   ├── lib/utils.test.ts
-    │   ├── lib/utils/scoring.test.ts  ← 5 OVR scoring tests (high-value, BRONZE, LEGENDARY gate, tier boundaries)
+    │   ├── lib/utils/scoring.test.ts
     │   └── lib/db/packs.test.ts
-    ├── .env.local                     ← Gitignored — credentials here
-    ├── .env.local.example             ← All 13+ required env vars documented
-    └── next.config.mjs                ← Must stay .mjs — Next.js 14 does not support .ts config
+    ├── .env.local
+    ├── .env.local.example
+    └── next.config.mjs
 ```
 
 ---
@@ -140,6 +179,12 @@ leadpack-tt/
 | All monetary values stored in cents (integer) | Avoid float precision issues; display layer does `/ 100` |
 | `next.config.mjs` not `.ts` | Next.js 14 does not support `.ts` config (added in Next.js 15) |
 | All DB logic in `lib/db/` | No raw SQL in components or page files |
+| `(pro)` route group layout for Pro gating | Server component DB check — same pattern as dashboard KYC gate; no Edge middleware |
+| `isActivePro(agent)` single source of truth | `is_legendary_pro === true AND pro_membership_expires_at > now()` — checked everywhere Pro content is gated |
+| Separate WiPay credentials for Pro vs wallet top-up | `WIPAY_PRO_*` env vars — keeps subscription income separate from credit top-up income |
+| wa.me connector, no WhatsApp Cloud API | Opens agent's own WhatsApp; zero API cost, zero Meta approval process needed |
+| `PIPELINE_STATUSES` defined locally in PipelineBoard | Importing from `lib/db/pipeline.ts` pulls `pg` into client bundle (Node.js `net`/`tls` not available in browser) |
+| `import type` for DB layer types in client components | Same reason as above — type imports are erased at compile time, value imports are not |
 
 ---
 
@@ -161,8 +206,10 @@ leadpack-tt/
 | 006 agent KYC | ✅ |
 | 007 pack cracks + wallet | ✅ |
 | 008 rename agents.name → full_name | ✅ |
-| 009 three pack tiers (STANDARD/PREMIUM/LEGENDARY pack_name constraint) | ✅ |
-| 010 lead_stats JSONB + calculated_ovr on leads | ✅ |
+| 009 three pack tiers | ✅ |
+| 010 lead_stats JSONB + calculated_ovr | ✅ |
+| 011 AI KYC fields (kyc_ai_verdict, kyc_ai_reason) | ⬜ Pending apply |
+| 012 Legendary Pro (is_legendary_pro, pro_applications, whatsapp_templates, lead_notes, pipeline_status, pack_subscriptions) | ⬜ Pending apply |
 
 ### Test Data (Supabase)
 - Dev agent: `volatusfinancial33@gmail.com` — APPROVED, wallet topped up to TT$10,000 (1,000,000 cents)
@@ -179,10 +226,11 @@ Register → Supabase email verification
   → /auth/callback → provisionAgent() → agents row (PENDING)
   → Redirect to /onboarding/kyc
     → Upload 3 docs (insurance license + 2 IDs) → POST /api/kyc/submit
-    → Status: PENDING (waiting admin review)
+      → Calls verifyKycDocuments() (Claude Haiku vision, maxDuration=60s)
+        → APPROVED  → agent.kyc_status = APPROVED, redirect to /marketplace
+        → REJECTED  → shows AI reason inline, agent can retry
+        → PENDING   → uncertain case, falls back to manual admin review
 Admin at /admin/kyc → PATCH /api/admin/kyc/[agentId] → APPROVED or REJECTED
-  → APPROVED → can access /marketplace, /wallet, /journal
-  → REJECTED → back to /onboarding/kyc with rejection reason shown
 ```
 
 **Admin access:** set `ADMIN_EMAILS=email@example.com` in `.env.local` (comma-separated for multiple)
@@ -239,23 +287,32 @@ POST /webhook/lead-intake
 # Supabase (auth only)
 NEXT_PUBLIC_SUPABASE_URL=          # ✅ set
 NEXT_PUBLIC_SUPABASE_ANON_KEY=     # ✅ set
-SUPABASE_SERVICE_ROLE_KEY=         # ✅ set (needed for KYC storage uploads)
+SUPABASE_SERVICE_ROLE_KEY=         # ✅ set (KYC storage uploads)
 
-# Direct Postgres (Supabase transaction pooler — no local Postgres needed)
-DATABASE_URL=postgresql://postgres.yvuoeshdfvqmgeqwvvrw:postgresql1234@aws-1-us-west-2.pooler.supabase.com:6543/postgres
+# Direct Postgres (Supabase transaction pooler)
+DATABASE_URL=postgresql://postgres.yvuoeshdfvqmgeqwvvrw:...@aws-1-us-west-2.pooler.supabase.com:6543/postgres
 
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ADMIN_EMAILS=volatusfinancial33@gmail.com
 
-# Not yet wired — documented in .env.local.example
-UPSTASH_REDIS_REST_URL=
-UPSTASH_REDIS_REST_TOKEN=
+# AI (KYC verification)
+ANTHROPIC_API_KEY=                 # ✅ set — Claude Haiku vision
+
+# WiPay — wallet top-up (existing)
 WIPAY_ACCOUNT_NUMBER=
 WIPAY_API_KEY=
 WIPAY_CALLBACK_SECRET=
-WHATSAPP_PHONE_NUMBER_ID=
-WHATSAPP_ACCESS_TOKEN=
+
+# WiPay — Pro subscription (separate account)
+WIPAY_PRO_ACCOUNT_NUMBER=
+WIPAY_PRO_API_KEY=
+WIPAY_PRO_CALLBACK_SECRET=
+WIPAY_MODE=mock                    # 'mock' (dev) | 'live' (prod)
+
+# Not yet wired
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
 ```
 
 ---
@@ -286,19 +343,70 @@ cd web && npm run dev
 
 ## Immediate Next Steps
 
-1. **Wire real leads into PackReveal** — crack API already returns `leads` array; replace `getMockLeadsForPack()` in PackCard with the leads from the crack API response (requires `leads` to have `lead_stats` JSONB populated via `src/import_excel_leads.py`)
+### Stage 7 — Analytics Dashboard (`/pro/analytics`)
+- 5 metric tiles: total leads, pipeline funnel, close rate, spend vs closed-won value, OVR distribution histogram
+- Recharts (already in project)
+- Server-side queries in `lib/db/analytics.ts`
 
-2. **Wallet top-up** — WiPay/FAC integration: `POST /api/wallet/topup` + `POST /api/wallet/topup/callback` webhook, idempotency via `gateway_ref`
+### Stage 8 — CSV Export
+- "Export CSV" button on pipeline + analytics pages
+- `GET /api/pro/export-csv` route
+- Columns: lead_id, first_name, last_name, phone, email, ovr, pack_source, pipeline_status, last_note, acquired_at
 
-4. **Upstash Redis timers** — replace `pack_cracks` DB-based expiry with Redis keys (`pack_timer:{pack_id}:{agent_id}`) for true serverless compatibility
+### Stage 9 — Auto-subscription Packs + Cron
+- `pack_subscriptions` table management (`/pro/subscriptions` page)
+- `GET /api/cron/deliver-subscriptions` — Vercel cron job, runs daily
 
-5. **WhatsApp outreach** — `POST /api/outreach/whatsapp`, Pro-only gate, log all sends to DB (n8n workflow scaffolded at `workflows/.../whatsapp-first-contact.workflow.ts`)
+### Stage 10 — Cosmetic
+- LEGENDARY PRO badge everywhere agent names render
+- Gold foil border (`pro-card` class) on Pro agent cards
 
-6. **Pro subscription** — subscription purchase flow, `subscription_tier` gating on Legendary packs and AI outreach
+### Backlog
+- **Apply migrations 011 + 012** to Supabase (pending)
+- **Wallet top-up** — WiPay integration for credit purchases (`POST /api/wallet/topup` + callback)
+- **Upstash Redis timers** — replace DB-based `pack_cracks` expiry
 
 ---
 
 ## Session History
+
+### Session 7 (2026-04-10): Legendary Pro + KYC AI + Pipeline Kanban + WhatsApp Connector (Stages 1–6)
+
+**Stage 1 — Schema (migration 012_legendary_pro.sql):**
+- Added `is_legendary_pro`, `pro_activated_at`, `pro_membership_expires_at` to `agents`
+- New tables: `pro_applications`, `whatsapp_templates` (partial unique index for one default per agent), `lead_notes`, `pack_subscriptions`
+- Added `pipeline_status` to `leads`, `release_at`/`pro_early_access_at` to `packs`
+
+**Stage 2 — Pro gating + upgrade flow:**
+- `isActivePro(agent)` in `lib/db/agents.ts` — single source of truth
+- `(pro)` route group layout — server-side DB check, redirects to `/pro/upgrade`
+- `lib/payments/wipay.ts` — `WiPayService` interface, `MockWiPayService` (dev instant-success), `LiveWiPayService` (stub)
+- `lib/db/pro.ts` — `upsertProApplication()`, `activateProApplication()` (transaction: flags agent, seeds default template)
+- `POST /api/pro/apply` → WiPay checkout; `POST /api/payments/wipay/callback` → activates; `GET /api/payments/mock-success` → dev shortcut
+- `/pro/upgrade` — 4-step form: account → KYC check → billing → TT$5,000 review
+
+**Stage 3 — AI KYC verification:**
+- `lib/ai/kycVerify.ts` — sends 3 docs to Claude Haiku vision; returns `APPROVED | REJECTED | PENDING`
+- `POST /api/kyc/submit` updated — auto-approves on `APPROVED`, shows rejection reason for `REJECTED`, falls back to manual review for `PENDING`
+- `KycUploadForm.tsx` rewritten — 4 UI phases (idle / submitting / approved / pending / rejected)
+
+**Stage 4 — Legendary pack gating:**
+- `packs.ts` — `release_at`, `pro_early_access_at` fields; WHERE clause excludes packs in early-access window from non-Pro agents
+- `PackCard.tsx` — Legendary Pro lock overlay with amber lock icon + "Upgrade to Pro" CTA; early-access countdown badge
+
+**Stage 5 — Pipeline kanban:**
+- `lib/db/pipeline.ts` — `getPipelineLeads()` (DISTINCT ON dedup), `updatePipelineStatus()`, `getLeadNotes()`, `addLeadNote()`
+- `PipelineBoard.tsx` — dnd-kit drag-and-drop, optimistic updates with server rollback
+- `LeadSidePanel.tsx` — slide-over: lead details + notes thread + add-note form
+- `PATCH /api/pro/leads/[leadId]/pipeline` + `GET|POST /api/pro/leads/[leadId]/notes`
+
+**Stage 6 — WhatsApp wa.me connector:**
+- `lib/db/templates.ts` — full CRUD + setDefault (transaction)
+- `GET|POST /api/pro/templates` + `PATCH|DELETE /api/pro/templates/[id]`
+- `TemplatesManager.tsx` — inline create/edit/delete/set-default
+- `WhatsAppModal.tsx` — template picker → variable interpolation (`{{firstName}}` etc.) → editable body → confirmation → opens `wa.me/18681234567?text=<encoded>`
+- `WhatsAppButton.tsx` rewritten — Pro: opens modal; non-Pro: "WA ↑Pro" label
+- `phoneToWaMe()` added to `lib/utils.ts`
 
 ### Session 6 (2026-04-10): Vercel Fix + Marketplace Redesign + Landing Page Update
 
