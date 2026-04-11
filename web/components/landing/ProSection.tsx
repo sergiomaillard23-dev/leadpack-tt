@@ -123,14 +123,7 @@ export function ProSection() {
             <div className="mt-2 flex flex-col gap-3">
               <Link
                 href="/pro/upgrade"
-                className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm transition-all hover:scale-105"
-                style={{
-                  background: 'linear-gradient(135deg, #92400e 0%, #b45309 30%, #d97706 60%, #92400e 100%)',
-                  backgroundSize: '200% 200%',
-                  color: '#fde68a',
-                  boxShadow: '0 0 20px rgba(245,158,11,0.25), inset 0 1px 0 rgba(253,230,138,0.1)',
-                  border: '1px solid rgba(245,158,11,0.4)',
-                }}
+                className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-sm btn-glow-amber"
               >
                 See Pro Membership Details
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
