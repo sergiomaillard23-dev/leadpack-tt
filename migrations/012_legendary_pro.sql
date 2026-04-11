@@ -4,7 +4,7 @@
 -- and auto-subscription delivery.
 -- Run after 011_outreach_logs.sql.
 
--- ── 1. Pro membership fields on agents ───────────────────────────────────────
+-- 1. Pro membership fields on agents
 
 ALTER TABLE agents
   ADD COLUMN IF NOT EXISTS is_legendary_pro           BOOLEAN     NOT NULL DEFAULT false,
@@ -21,9 +21,9 @@ UPDATE agents
 CREATE INDEX IF NOT EXISTS idx_agents_legendary_pro
   ON agents (is_legendary_pro) WHERE is_legendary_pro = true;
 
--- ── 2. Pro applications (upgrade / signup flow) ───────────────────────────────
+-- 2. Pro applications (upgrade / signup flow)
 
-CREATE TABLE pro_applications (
+CREATE TABLE IF NOT EXISTS pro_applications (
   id                    UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
   agent_id              UUID        NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
   full_name             TEXT        NOT NULL,
@@ -39,12 +39,12 @@ CREATE TABLE pro_applications (
   reviewed_at           TIMESTAMPTZ
 );
 
-CREATE INDEX idx_pro_applications_agent  ON pro_applications (agent_id);
-CREATE INDEX idx_pro_applications_status ON pro_applications (status);
+CREATE INDEX IF NOT EXISTS idx_pro_applications_agent  ON pro_applications (agent_id);
+CREATE INDEX IF NOT EXISTS idx_pro_applications_status ON pro_applications (status);
 
--- ── 3. WhatsApp templates ─────────────────────────────────────────────────────
+-- 3. WhatsApp templates
 
-CREATE TABLE whatsapp_templates (
+CREATE TABLE IF NOT EXISTS whatsapp_templates (
   id         UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
   agent_id   UUID        NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
   name       TEXT        NOT NULL,
@@ -54,15 +54,15 @@ CREATE TABLE whatsapp_templates (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_whatsapp_templates_agent ON whatsapp_templates (agent_id);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_templates_agent ON whatsapp_templates (agent_id);
 
 -- Enforce at most one default template per agent.
-CREATE UNIQUE INDEX idx_whatsapp_templates_one_default
+CREATE UNIQUE INDEX IF NOT EXISTS idx_whatsapp_templates_one_default
   ON whatsapp_templates (agent_id) WHERE is_default = true;
 
--- ── 4. Lead notes (CRM thread) ────────────────────────────────────────────────
+-- 4. Lead notes (CRM thread)
 
-CREATE TABLE lead_notes (
+CREATE TABLE IF NOT EXISTS lead_notes (
   id         UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
   lead_id    UUID        NOT NULL REFERENCES leads(id)  ON DELETE CASCADE,
   agent_id   UUID        NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
@@ -70,10 +70,10 @@ CREATE TABLE lead_notes (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_lead_notes_lead  ON lead_notes (lead_id,  created_at DESC);
-CREATE INDEX idx_lead_notes_agent ON lead_notes (agent_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_lead_notes_lead  ON lead_notes (lead_id,  created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_lead_notes_agent ON lead_notes (agent_id, created_at DESC);
 
--- ── 5. Pipeline status on leads ───────────────────────────────────────────────
+-- 5. Pipeline status on leads
 
 ALTER TABLE leads
   ADD COLUMN IF NOT EXISTS pipeline_status TEXT NOT NULL DEFAULT 'NEW'
@@ -81,15 +81,15 @@ ALTER TABLE leads
 
 CREATE INDEX IF NOT EXISTS idx_leads_pipeline ON leads (pipeline_status);
 
--- ── 6. Pack early-access timestamps ──────────────────────────────────────────
+-- 6. Pack early-access timestamps
 
 ALTER TABLE packs
   ADD COLUMN IF NOT EXISTS release_at          TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS pro_early_access_at TIMESTAMPTZ;
 
--- ── 7. Auto-subscription packs ────────────────────────────────────────────────
+-- 7. Auto-subscription packs
 
-CREATE TABLE pack_subscriptions (
+CREATE TABLE IF NOT EXISTS pack_subscriptions (
   id                 UUID        PRIMARY KEY DEFAULT uuid_generate_v4(),
   agent_id           UUID        NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
   pack_tier          TEXT        NOT NULL
@@ -101,6 +101,6 @@ CREATE TABLE pack_subscriptions (
   created_at         TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_pack_subscriptions_agent    ON pack_subscriptions (agent_id);
-CREATE INDEX idx_pack_subscriptions_delivery ON pack_subscriptions (next_delivery_at)
+CREATE INDEX IF NOT EXISTS idx_pack_subscriptions_agent    ON pack_subscriptions (agent_id);
+CREATE INDEX IF NOT EXISTS idx_pack_subscriptions_delivery ON pack_subscriptions (next_delivery_at)
   WHERE active = true;
